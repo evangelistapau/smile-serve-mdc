@@ -5,6 +5,14 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import Sidebar from '@/components/Sidebar'
 
+const pageTitles: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/appointments': 'Appointments',
+    '/patients': 'Patients',
+    '/sms': 'SMS Notifications',
+    '/settings': 'Settings',
+}
+
 /**
  * Wraps authenticated pages with the sidebar.
  * Shows a loading state while checking auth; redirects to "/" if not logged in.
@@ -63,13 +71,23 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         return null
     }
 
+    const pageTitle = pageTitles[pathname] || 'Dashboard'
+
     // Authenticated — sidebar + content
     return (
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
+        <div className="flex h-screen bg-gray-50">
             <Sidebar />
-            <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-                {children}
-            </main>
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Top Bar */}
+                <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+                    <h2 className="text-2xl font-bold text-gray-900">{pageTitle}</h2>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 overflow-auto p-6">
+                    {children}
+                </div>
+            </div>
         </div>
     )
 }
