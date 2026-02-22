@@ -23,7 +23,7 @@ const navItems = [
     { label: 'Appointments', href: '/appointments', icon: CalendarDays },
     { label: 'Patients', href: '/patients', icon: Users },
     { label: 'SMS Notifications', href: '/sms', icon: Bell },
-    { label: 'Settings', href: '/settings', icon: Sliders },
+    { label: 'Account Settings', href: '/settings', icon: Sliders },
 ]
 
 export default function Sidebar() {
@@ -68,8 +68,8 @@ export default function Sidebar() {
                             key={href}
                             href={href}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all no-underline ${isActive
-                                    ? 'bg-blue-500 text-white'
-                                    : 'text-gray-700 hover:bg-gray-100'
+                                ? 'bg-blue-500 text-white'
+                                : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                             title={!sidebarOpen ? label : undefined}
                         >

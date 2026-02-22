@@ -13,6 +13,13 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMessage, setResetMessage] = useState<string | null>(null)
+  const [resetError, setResetError] = useState<string | null>(null)
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -30,6 +37,32 @@ export default function Home() {
     } else {
       router.push('/dashboard')
     }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setResetLoading(true)
+    setResetMessage(null)
+    setResetError(null)
+
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+
+    setResetLoading(false)
+
+    if (error) {
+      setResetError(error.message)
+    } else {
+      setResetMessage('Password reset instructions have been sent to your email.')
+    }
+  }
+
+  const openForgotModal = () => {
+    setResetEmail('')
+    setResetMessage(null)
+    setResetError(null)
+    setShowForgotModal(true)
   }
 
   return (
@@ -89,19 +122,13 @@ export default function Home() {
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2 text-gray-600">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              Remember me
-            </label>
-
-            {/* DO THIS FUNCTIONALITY */}
-            <a href="/forgot-password" className="text-blue-500 hover:underline">
+            <button
+              type="button"
+              onClick={openForgotModal}
+              className="text-blue-500 hover:underline"
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -115,6 +142,58 @@ export default function Home() {
           </button>
         </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 relative">
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            <h2 className="text-lg font-bold text-gray-800 mb-2">Reset Password</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Enter your email address and we&apos;ll send you instructions to reset your password.
+            </p>
+
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {resetError && (
+                <p className="text-red-500 text-sm">{resetError}</p>
+              )}
+              {resetMessage && (
+                <p className="text-green-600 text-sm">{resetMessage}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg"
+              >
+                {resetLoading ? 'Sending...' : 'Send Reset Instructions'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
