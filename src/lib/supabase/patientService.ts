@@ -19,32 +19,66 @@ export async function getPatients(): Promise<{ data: Patient[] | null; error: st
 }
 
 /**
- * Fetch a single patient by patient_id.
+ * Fetch a single patient by id (UUID).
  */
 export async function getPatientById(
-    patientId: string
+    id: string
 ): Promise<{ data: Patient | null; error: string | null }> {
     const { data, error } = await supabase
         .from('patient')
         .select('*')
-        .eq('patient_id', patientId)
+        .eq('id', id)
         .single()
 
     return {
         data: data as Patient | null,
         error: error ? error.message : null,
     }
+}
+
+/**
+ * Generate the next display patient_id in the format PT-YYYY-N.
+ */
+async function generateDisplayId(): Promise<string> {
+    const year = new Date().getFullYear()
+    const prefix = `PT-${year}-`
+
+    // Get the highest existing display ID for this year
+    const { data } = await supabase
+        .from('patient')
+        .select('patient_id')
+        .like('patient_id', `${prefix}%`)
+        .order('patient_id', { ascending: false })
+        .limit(1)
+
+    let nextNum = 1
+    if (data && data.length > 0 && data[0].patient_id) {
+        const lastNum = parseInt(data[0].patient_id.replace(prefix, ''), 10)
+        if (!isNaN(lastNum)) {
+            nextNum = lastNum + 1
+        }
+    }
+
+    return `${prefix}${nextNum}`
 }
 
 /**
  * Insert a new patient into the "patient" table.
+ * Auto-generates patient_id (display ID) and sets last_visit to today.
  */
 export async function createPatient(
-    patient: Omit<Patient, 'patient_id' | 'created_at'>
+    patient: Omit<Patient, 'id' | 'patient_id' | 'created_at'>
 ): Promise<{ data: Patient | null; error: string | null }> {
+    const displayId = await generateDisplayId()
+    const today = new Date().toISOString().split('T')[0]
+
     const { data, error } = await supabase
         .from('patient')
-        .insert([patient])
+        .insert([{
+            ...patient,
+            patient_id: displayId,
+            last_visit: patient.last_visit || today,
+        }])
         .select()
         .single()
 
@@ -55,16 +89,16 @@ export async function createPatient(
 }
 
 /**
- * Update an existing patient by patient_id.
+ * Update an existing patient by id (UUID).
  */
 export async function updatePatient(
-    patientId: string,
-    updates: Partial<Omit<Patient, 'patient_id' | 'created_at'>>
+    id: string,
+    updates: Partial<Omit<Patient, 'id' | 'patient_id' | 'created_at'>>
 ): Promise<{ data: Patient | null; error: string | null }> {
     const { data, error } = await supabase
         .from('patient')
         .update(updates)
-        .eq('patient_id', patientId)
+        .eq('id', id)
         .select()
         .single()
 
@@ -75,15 +109,15 @@ export async function updatePatient(
 }
 
 /**
- * Delete a patient by patient_id.
+ * Delete a patient by id (UUID).
  */
 export async function deletePatient(
-    patientId: string
+    id: string
 ): Promise<{ error: string | null }> {
     const { error } = await supabase
         .from('patient')
         .delete()
-        .eq('patient_id', patientId)
+        .eq('id', id)
 
     return {
         error: error ? error.message : null,
@@ -96,12 +130,12 @@ export async function deletePatient(
  * Fetch all history records for a given patient, ordered by date descending.
  */
 export async function getPatientHistory(
-    patientId: string
+    patientUuid: string
 ): Promise<{ data: PatientHistory[] | null; error: string | null }> {
     const { data, error } = await supabase
         .from('patient_history')
         .select('*')
-        .eq('patient_id', patientId)
+        .eq('id', patientUuid)
         .order('date', { ascending: false })
 
     return {
