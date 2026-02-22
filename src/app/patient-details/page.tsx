@@ -20,6 +20,7 @@ export default function PatientDetailsPage() {
     const [saving, setSaving] = useState(false)
     const [editData, setEditData] = useState({
         first_name: '',
+        middle_name: '',
         last_name: '',
         phone: '',
         email: '',
@@ -51,6 +52,7 @@ export default function PatientDetailsPage() {
         if (!patient) return
         setEditData({
             first_name: patient.first_name || '',
+            middle_name: patient.middle_name || '',
             last_name: patient.last_name || '',
             phone: patient.phone || '',
             email: patient.email || '',
@@ -73,6 +75,7 @@ export default function PatientDetailsPage() {
 
         const { data, error } = await updatePatient(patient.id, {
             first_name: editData.first_name,
+            middle_name: editData.middle_name || undefined,
             last_name: editData.last_name,
             phone: editData.phone || undefined,
             email: editData.email || undefined,
@@ -168,6 +171,13 @@ export default function PatientDetailsPage() {
                             />
                             <input
                                 type="text"
+                                value={editData.middle_name}
+                                onChange={(e) => setEditData({ ...editData, middle_name: e.target.value })}
+                                placeholder="Middle name"
+                                className="text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none"
+                            />
+                            <input
+                                type="text"
                                 value={editData.last_name}
                                 onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
                                 placeholder="Last name"
@@ -176,7 +186,7 @@ export default function PatientDetailsPage() {
                         </div>
                     ) : (
                         <h2 className="text-2xl font-bold text-gray-900">
-                            {patient.first_name} {patient.last_name}
+                            {patient.first_name} {patient.middle_name ? patient.middle_name + ' ' : ''}{patient.last_name}
                         </h2>
                     )}
                     <p className="text-sm text-blue-500 mt-1">
@@ -192,9 +202,10 @@ export default function PatientDetailsPage() {
                         {isEditing ? (
                             <input
                                 type="number"
+                                min="0"
+                                max="150"
                                 value={editData.age}
                                 onChange={(e) => setEditData({ ...editData, age: e.target.value ? parseInt(e.target.value) : '' })}
-                                placeholder="Enter age"
                                 className={inputClass}
                             />
                         ) : (

@@ -2,10 +2,10 @@ export interface Patient {
     id?: string           // UUID primary key (was patient_id)
     patient_id?: string   // Human-readable display ID (e.g. PT-2026-1)
     first_name: string
+    middle_name?: string  //optional
     last_name: string
     email?: string
     phone?: string
-    date_of_birth?: string
     address?: string
     gender?: string
     age?: number
@@ -15,10 +15,3 @@ export interface Patient {
     created_at?: string
 }
 
-export interface PatientHistory {
-    history_id?: string
-    id: string            // References patient.id (UUID)
-    notes?: string
-    date?: string
-    created_at?: string
-}
