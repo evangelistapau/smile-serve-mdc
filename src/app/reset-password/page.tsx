@@ -16,11 +16,14 @@ export default function ResetPassword() {
     const [sessionReady, setSessionReady] = useState(false)
 
     useEffect(() => {
+        let redirectTimer: NodeJS.Timeout
+
         // Supabase automatically picks up the recovery token from the URL hash
         // and establishes a session. We listen for that event.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event) => {
                 if (event === 'PASSWORD_RECOVERY') {
+                    clearTimeout(redirectTimer)
                     setSessionReady(true)
                 }
             }
@@ -28,11 +31,22 @@ export default function ResetPassword() {
 
         // Also check if a session already exists (e.g. page was refreshed)
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) setSessionReady(true)
+            if (session) {
+                clearTimeout(redirectTimer)
+                setSessionReady(true)
+            }
         })
 
-        return () => subscription.unsubscribe()
-    }, [])
+        // If no recovery session is established within 5 seconds, redirect to login
+        redirectTimer = setTimeout(() => {
+            router.push('/')
+        }, 5000)
+
+        return () => {
+            clearTimeout(redirectTimer)
+            subscription.unsubscribe()
+        }
+    }, [router])
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault()
