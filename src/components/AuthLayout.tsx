@@ -26,7 +26,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     const [authenticated, setAuthenticated] = useState(false)
 
     // Public pages that don't need the sidebar
-    const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/reset-password'
+    const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/reset-password' || pathname === '/patient-booking'
 
     useEffect(() => {
         const check = async () => {
