@@ -1,4 +1,4 @@
-import { supabase } from './supabase/client'
+import { supabase } from './client'
 import { Appointment } from '@/types/appointment'
 
 // ─── Time format converters ──────────────────────────────────
@@ -48,6 +48,9 @@ export async function getBookedTimeSlots(date: string): Promise<string[]> {
  * Create a new appointment (with slot conflict check).
  * Accepts display-format time ("9:00 AM") and converts to DB format.
  */
+
+
+// SHOULD I DO THE SLOT CONFLICT CHECK PA?
 export async function createAppointment(
     data: Omit<Appointment, 'appointment_id' | 'created_at'>
 ) {
@@ -87,7 +90,6 @@ export async function createAppointment(
     }
 }
 
-
 /**
  * Check if all time slots are booked for a date.
  */
@@ -119,6 +121,8 @@ export function isPastOperatingHours(date: Date, lastTimeSlot: string): boolean 
     return currentHour > slotHour || (currentHour === slotHour && currentMinute > minutes)
 }
 
+
+// FOR WHAT IS THIS?
 /**
  * Get all distinct dates that have at least one appointment in a given month.
  * Returns an array of date strings (YYYY-MM-DD).

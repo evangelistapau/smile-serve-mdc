@@ -7,7 +7,7 @@ import {
     createAppointment,
     isPastOperatingHours,
     isDateFullyBooked,
-} from '@/lib/appointments'
+} from '@/lib/supabase/appointmentService'
 
 // ─── Constants ───────────────────────────────────────────────
 
