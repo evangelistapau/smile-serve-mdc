@@ -46,7 +46,10 @@ export default function Sidebar() {
             <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                     {sidebarOpen && (
-                        <h1 className="text-xl font-bold text-blue-600">DentaCare</h1>
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.png" alt="SmileServe Logo" className="w-8 h-8 object-contain" />
+                            <h1 className="text-xl font-bold text-blue-600">SmileServe</h1>
+                        </div>
                     )}
                     <Button
                         variant="ghost"

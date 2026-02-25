@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Patient } from '@/types/patient'
 import { X, ChevronDown } from 'lucide-react'
 
-interface PatientModalProps {
+interface AddPatientModalProps {
     isOpen: boolean
     onClose: () => void
     onSubmit: (patient: Omit<Patient, 'id' | 'patient_id' | 'created_at'>) => void
@@ -12,13 +12,13 @@ interface PatientModalProps {
     submitting?: boolean
 }
 
-export default function PatientModal({
+export default function AddPatientModal({
     isOpen,
     onClose,
     onSubmit,
     initialData,
     submitting = false,
-}: PatientModalProps) {
+}: AddPatientModalProps) {
 
     const [firstName, setFirstName] = useState('')
     const [middleName, setMiddleName] = useState('')
@@ -113,6 +113,7 @@ export default function PatientModal({
                                 type="text"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
+                                placeholder="Juan"
                                 required
                                 className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                             />
@@ -126,6 +127,7 @@ export default function PatientModal({
                                 type="text"
                                 value={middleName}
                                 onChange={(e) => setMiddleName(e.target.value)}
+                                placeholder="Santos"
                                 className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                             />
                         </div>
@@ -138,22 +140,34 @@ export default function PatientModal({
                                 type="text"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
+                                placeholder="Dela Cruz"
                                 required
                                 className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                             />
                         </div>
                     </div>
 
-                    {/* Row 2: Email & Age */}
+                    {/* Row 2: Phone & Age */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                Email <span className="text-red-500">*</span>
+                                Phone <span className="text-red-500">*</span>
                             </label>
                             <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => {
+                                    // Allow only numbers
+                                    const numericValue = e.target.value.replace(/\D/g, "");
+
+                                    // Limit to 11 digits
+                                    if (numericValue.length <= 11) {
+                                        setPhone(numericValue);
+                                    }
+                                }}
+                                placeholder="09123456789"
+                                pattern="^09\d{9}$"
+                                maxLength={11}
                                 required
                                 className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                             />
@@ -169,21 +183,23 @@ export default function PatientModal({
                                 max="150"
                                 value={age}
                                 onChange={(e) => setAge(e.target.value ? parseInt(e.target.value) : '')}
+                                placeholder="18"
                                 required
                                 className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                             />
                         </div>
                     </div>
 
-                    {/* Row 3: Phone */}
+                    {/* Row 3: Email */}
                     <div className="mb-4">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Phone <span className="text-red-500">*</span>
+                            Email <span className="text-red-500">*</span>
                         </label>
                         <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="juan@email.com"
                             required
                             className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                         />
@@ -253,6 +269,7 @@ export default function PatientModal({
                             type="text"
                             value={occupation}
                             onChange={(e) => setOccupation(e.target.value)}
+                            placeholder="Student"
                             required
                             className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                         />
@@ -267,6 +284,7 @@ export default function PatientModal({
                             type="text"
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
+                            placeholder="Tabi, Boac, Marinduque"
                             required
                             className="w-full px-3 py-2 border-b border-gray-300 bg-transparent text-sm focus:outline-none focus:border-blue-500 transition"
                         />

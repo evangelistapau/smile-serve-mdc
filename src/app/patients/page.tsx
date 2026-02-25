@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Patient } from '@/types/patient'
 import { getPatients, createPatient, deletePatient } from '@/lib/supabase/patientService'
-import { Search, Plus, Eye, Trash2 } from 'lucide-react'
+import { Search, Plus, Eye, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import PatientModal from '@/components/PatientModal'
+import AddPatientModal from '@/components/AddPatientModal'
 
 export default function PatientsPage() {
     const router = useRouter()
@@ -13,6 +13,8 @@ export default function PatientsPage() {
     const [patientsLoading, setPatientsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [sortField, setSortField] = useState<'patient_id' | 'name' | 'last_visit'>('patient_id')
+    const [sortAsc, setSortAsc] = useState(true)
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -74,6 +76,38 @@ export default function PatientsPage() {
             (p.patient_id && p.patient_id.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
+    const toggleSort = (field: 'patient_id' | 'name' | 'last_visit') => {
+        if (sortField === field) {
+            setSortAsc(!sortAsc)
+        } else {
+            setSortField(field)
+            setSortAsc(true)
+        }
+    }
+
+    const sortedPatients = [...filteredPatients].sort((a, b) => {
+        let valA = ''
+        let valB = ''
+        if (sortField === 'patient_id') {
+            valA = a.patient_id || ''
+            valB = b.patient_id || ''
+        } else if (sortField === 'name') {
+            valA = `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase()
+            valB = `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase()
+        } else if (sortField === 'last_visit') {
+            valA = a.last_visit || ''
+            valB = b.last_visit || ''
+        }
+        return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    })
+
+    const SortIcon = ({ field }: { field: 'patient_id' | 'name' | 'last_visit' }) => {
+        if (sortField !== field) return <ArrowDown className="w-3 h-3 text-gray-300" />
+        return sortAsc
+            ? <ArrowUp className="w-3 h-3 text-blue-500" />
+            : <ArrowDown className="w-3 h-3 text-blue-500" />
+    }
+
     return (
         <div className="space-y-6">
             {/* Error Banner */}
@@ -90,7 +124,7 @@ export default function PatientsPage() {
                     <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search patients by name, phone, email, or ID..."
+                        placeholder="Search patients by Patient ID, name, phone, or email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -111,11 +145,26 @@ export default function PatientsPage() {
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Patient ID</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                                <th
+                                    onClick={() => toggleSort('patient_id')}
+                                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition"
+                                >
+                                    <span className="inline-flex items-center gap-1">Patient ID <SortIcon field="patient_id" /></span>
+                                </th>
+                                <th
+                                    onClick={() => toggleSort('name')}
+                                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition"
+                                >
+                                    <span className="inline-flex items-center gap-1">Name <SortIcon field="name" /></span>
+                                </th>
                                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
                                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Last Visit</th>
+                                <th
+                                    onClick={() => toggleSort('last_visit')}
+                                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition"
+                                >
+                                    <span className="inline-flex items-center gap-1">Last Visit <SortIcon field="last_visit" /></span>
+                                </th>
                                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
                             </tr>
                         </thead>
@@ -133,7 +182,7 @@ export default function PatientsPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredPatients.map((patient) => (
+                                sortedPatients.map((patient) => (
                                     <tr
                                         key={patient.id}
                                         className="border-b border-gray-100 hover:bg-gray-50/50 transition"
@@ -174,7 +223,7 @@ export default function PatientsPage() {
             </div>
 
             {/* Add Patient Modal */}
-            <PatientModal
+            <AddPatientModal
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 onSubmit={handleSubmit}

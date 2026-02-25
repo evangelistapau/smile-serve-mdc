@@ -1,6 +1,7 @@
 export interface PatientHistory {
-    history_id?: string
-    id: string            // References patient.id (UUID)
+    id: string
+    patient_id: string            // References patient.id (UUID)
+    service?: string
     notes?: string
     date?: string
     created_at?: string

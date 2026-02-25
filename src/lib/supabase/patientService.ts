@@ -1,5 +1,5 @@
 import { supabase } from './client'
-import { Patient, PatientHistory } from '../../types/patient'
+import { Patient } from '../../types/patient'
 
 // ─── PATIENT CRUD ───────────────────────────────────────────────────────────
 
@@ -118,80 +118,6 @@ export async function deletePatient(
         .from('patient')
         .delete()
         .eq('id', id)
-
-    return {
-        error: error ? error.message : null,
-    }
-}
-
-// ─── PATIENT HISTORY CRUD ───────────────────────────────────────────────────
-
-/**
- * Fetch all history records for a given patient, ordered by date descending.
- */
-export async function getPatientHistory(
-    patientUuid: string
-): Promise<{ data: PatientHistory[] | null; error: string | null }> {
-    const { data, error } = await supabase
-        .from('patient_history')
-        .select('*')
-        .eq('id', patientUuid)
-        .order('date', { ascending: false })
-
-    return {
-        data: data as PatientHistory[] | null,
-        error: error ? error.message : null,
-    }
-}
-
-/**
- * Insert a new history record for a patient.
- */
-export async function createPatientHistory(
-    history: Omit<PatientHistory, 'history_id' | 'created_at'>
-): Promise<{ data: PatientHistory | null; error: string | null }> {
-    const { data, error } = await supabase
-        .from('patient_history')
-        .insert([history])
-        .select()
-        .single()
-
-    return {
-        data: data as PatientHistory | null,
-        error: error ? error.message : null,
-    }
-}
-
-/**
- * Update a patient history record by history_id.
- */
-export async function updatePatientHistory(
-    historyId: string,
-    updates: Partial<Omit<PatientHistory, 'history_id' | 'created_at'>>
-): Promise<{ data: PatientHistory | null; error: string | null }> {
-    const { data, error } = await supabase
-        .from('patient_history')
-        .update(updates)
-        .eq('history_id', historyId)
-        .select()
-        .single()
-
-    return {
-        data: data as PatientHistory | null,
-        error: error ? error.message : null,
-    }
-}
-
-/**
- * Delete a patient history record by history_id.
- */
-export async function deletePatientHistory(
-    historyId: string
-): Promise<{ error: string | null }> {
-    const { error } = await supabase
-        .from('patient_history')
-        .delete()
-        .eq('history_id', historyId)
 
     return {
         error: error ? error.message : null,
