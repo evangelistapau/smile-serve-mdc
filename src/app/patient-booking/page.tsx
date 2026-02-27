@@ -63,6 +63,7 @@ export default function PatientBookingPage() {
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [showForm, setShowForm] = useState(false)
     const [bookedSlots, setBookedSlots] = useState<string[]>([])
+    const [loadingSlots, setLoadingSlots] = useState(false)
 
     // Dates that are disabled (past / past operating hours)
     const [disabledDates, setDisabledDates] = useState<Set<string>>(new Set())
@@ -76,10 +77,14 @@ export default function PatientBookingPage() {
     // ─── Fetch booked slots when date changes ────────────────
     useEffect(() => {
         let cancelled = false
-        setBookedSlots([])   // clear immediately so old date's slots don't bleed in
+        setBookedSlots([])
+        setLoadingSlots(true)
         async function load() {
             const slots = await getBookedTimeSlots(dateString)
-            if (!cancelled) setBookedSlots(slots)
+            if (!cancelled) {
+                setBookedSlots(slots)
+                setLoadingSlots(false)
+            }
         }
         load()
         return () => { cancelled = true }
@@ -162,6 +167,7 @@ export default function PatientBookingPage() {
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 bookedSlots={bookedSlots}
+                loading={loadingSlots}
                 onTimeSlotSelect={handleTimeSlotSelect}
             />
 
@@ -297,11 +303,13 @@ function TimeSlots({
     selectedDate,
     selectedTime,
     bookedSlots,
+    loading,
     onTimeSlotSelect,
 }: {
     selectedDate: Date
     selectedTime: string | null
     bookedSlots: string[]
+    loading: boolean
     onTimeSlotSelect: (time: string) => void
 }) {
     const dayName = selectedDate.toLocaleDateString('default', { weekday: 'long' })
@@ -327,34 +335,41 @@ function TimeSlots({
             )}
 
             <div className="space-y-3 flex-1 overflow-y-auto">
-                {ALL_TIME_SLOTS.map((time) => {
-                    const booked = bookedSlots.includes(time)
-                    const past = isTimeSlotPast(time, selectedDate)
-                    const unavailable = booked || past
+                {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="ml-3 text-sm text-gray-400">Loading slots…</span>
+                    </div>
+                ) : (
+                    ALL_TIME_SLOTS.map((time) => {
+                        const booked = bookedSlots.includes(time)
+                        const past = isTimeSlotPast(time, selectedDate)
+                        const unavailable = booked || past
 
-                    return (
-                        <button
-                            key={time}
-                            onClick={() => onTimeSlotSelect(time)}
-                            disabled={unavailable}
-                            className={`w-full py-4 px-6 border-2 rounded-lg text-center font-semibold transition-all ${booked
-                                ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed line-through opacity-60'
-                                : past
-                                    ? 'border-red-400 bg-red-50 text-red-600 cursor-not-allowed opacity-75'
-                                    : selectedTime === time
-                                        ? 'border-blue-500 bg-blue-500 text-white'
-                                        : 'border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50'
-                                }`}
-                        >
-                            {time}
-                            {booked && (
-                                <span className="text-xs ml-2 font-medium" style={{ textDecoration: 'none' }}>
-                                    (Booked)
-                                </span>
-                            )}
-                        </button>
-                    )
-                })}
+                        return (
+                            <button
+                                key={time}
+                                onClick={() => onTimeSlotSelect(time)}
+                                disabled={unavailable}
+                                className={`w-full py-4 px-6 border-2 rounded-lg text-center font-semibold transition-all ${booked
+                                    ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed line-through opacity-60'
+                                    : past
+                                        ? 'border-red-400 bg-red-50 text-red-600 cursor-not-allowed opacity-75'
+                                        : selectedTime === time
+                                            ? 'border-blue-500 bg-blue-500 text-white'
+                                            : 'border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50'
+                                    }`}
+                            >
+                                {time}
+                                {booked && (
+                                    <span className="text-xs ml-2 font-medium" style={{ textDecoration: 'none' }}>
+                                        (Booked)
+                                    </span>
+                                )}
+                            </button>
+                        )
+                    })
+                )}
             </div>
         </div>
     )

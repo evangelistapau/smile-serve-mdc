@@ -65,7 +65,7 @@ export async function createAppointment(
         .limit(1)
 
     if (checkError) {
-        console.error('Error checking slot:', checkError)
+        console.error('Error checking slot:', checkError.message)
         throw new Error('CHECK_FAILED')
     }
 
