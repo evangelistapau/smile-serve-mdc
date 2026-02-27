@@ -30,7 +30,12 @@ const isSameDay = (a: Date, b: Date) =>
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
 
-const toDateStr = (d: Date) => d.toISOString().split('T')[0]
+const toDateStr = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
 
 function isTimeSlotPast(time: string, selectedDate: Date) {
     const now = new Date()
@@ -71,6 +76,7 @@ export default function PatientBookingPage() {
     // ─── Fetch booked slots when date changes ────────────────
     useEffect(() => {
         let cancelled = false
+        setBookedSlots([])   // clear immediately so old date's slots don't bleed in
         async function load() {
             const slots = await getBookedTimeSlots(dateString)
             if (!cancelled) setBookedSlots(slots)
