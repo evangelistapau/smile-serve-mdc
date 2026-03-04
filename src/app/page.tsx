@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '../lib/supabase/client'
+import { recordLogin } from '../lib/supabase/settingsService'
 import { useRouter } from 'next/navigation'
 
 export default function Home() {
@@ -35,6 +36,7 @@ export default function Home() {
     if (error) {
       setError(error.message)
     } else {
+      await recordLogin()
       router.push('/dashboard')
     }
   }

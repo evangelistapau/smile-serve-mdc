@@ -352,9 +352,9 @@ function TimeSlots({
                                 onClick={() => onTimeSlotSelect(time)}
                                 disabled={unavailable}
                                 className={`w-full py-4 px-6 border-2 rounded-lg text-center font-semibold transition-all ${booked
-                                    ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed line-through opacity-60'
+                                    ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed opacity-60'
                                     : past
-                                        ? 'border-red-400 bg-red-50 text-red-600 cursor-not-allowed opacity-75'
+                                        ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed opacity-60'
                                         : selectedTime === time
                                             ? 'border-blue-500 bg-blue-500 text-white'
                                             : 'border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50'
@@ -362,7 +362,7 @@ function TimeSlots({
                             >
                                 {time}
                                 {booked && (
-                                    <span className="text-xs ml-2 font-medium" style={{ textDecoration: 'none' }}>
+                                    <span className="text-xs ml-2 font-medium">
                                         (Booked)
                                     </span>
                                 )}
