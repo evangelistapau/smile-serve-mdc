@@ -150,3 +150,146 @@ export async function getAppointmentDatesForMonth(
     const dates = (data || []).map((a) => a.appointment_date)
     return [...new Set(dates)]
 }
+
+// ─── Get full appointment details for a single date ─────────
+
+export async function getAppointmentsForDate(date: string): Promise<Appointment[]> {
+    const { data, error } = await supabase
+        .from('appointment')
+        .select('*')
+        .eq('appointment_date', date)
+        .order('appointment_time', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching appointments:', error)
+        return []
+    }
+
+    return (data || []).map((row) => ({
+        appointment_id: row.appointment_id,
+        patient_name: row.patient_name,
+        patient_email: row.patient_email || '',
+        phone_number: row.phone_number || '',
+        appointment_date: row.appointment_date,
+        appointment_time: toDisplayTime(row.appointment_time),
+        purpose: row.purpose || '',
+        created_at: row.created_at,
+    }))
+}
+
+// ─── Get appointments for a date range (week view + calendar counts) ─
+
+export async function getAppointmentsForDateRange(
+    startDate: string,
+    endDate: string
+): Promise<Appointment[]> {
+    const { data, error } = await supabase
+        .from('appointment')
+        .select('*')
+        .gte('appointment_date', startDate)
+        .lte('appointment_date', endDate)
+        .order('appointment_time', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching appointments for range:', error)
+        return []
+    }
+
+    return (data || []).map((row) => ({
+        appointment_id: row.appointment_id,
+        patient_name: row.patient_name,
+        patient_email: row.patient_email || '',
+        phone_number: row.phone_number || '',
+        appointment_date: row.appointment_date,
+        appointment_time: toDisplayTime(row.appointment_time),
+        purpose: row.purpose || '',
+        created_at: row.created_at,
+    }))
+}
+
+// ─── Delete an appointment ──────────────────────────────────
+
+export async function deleteAppointment(id: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('appointment')
+        .delete()
+        .eq('appointment_id', id)
+
+    if (error) {
+        console.error('Error deleting appointment:', error.message)
+        return false
+    }
+    return true
+}
+
+// ─── Unavailable Slots ──────────────────────────────────────
+
+export interface UnavailableSlot {
+    id: string
+    date: string
+    time_slot: string | null  // null = entire day
+}
+
+export async function getUnavailableSlots(date: string): Promise<UnavailableSlot[]> {
+    const { data, error } = await supabase
+        .from('unavailable_slots')
+        .select('id, date, time_slot')
+        .eq('date', date)
+
+    if (error) {
+        console.error('Error fetching unavailable slots:', error.message)
+        return []
+    }
+    return data || []
+}
+
+export async function getUnavailableSlotsForRange(
+    startDate: string,
+    endDate: string
+): Promise<UnavailableSlot[]> {
+    const { data, error } = await supabase
+        .from('unavailable_slots')
+        .select('id, date, time_slot')
+        .gte('date', startDate)
+        .lte('date', endDate)
+
+    if (error) {
+        console.error('Error fetching unavailable slots range:', error.message)
+        return []
+    }
+    return data || []
+}
+
+export async function setSlotUnavailable(date: string, timeSlot?: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('unavailable_slots')
+        .insert({ date, time_slot: timeSlot || null })
+
+    if (error) {
+        console.error('Error setting slot unavailable:', error.message)
+        return false
+    }
+    return true
+}
+
+export async function removeSlotUnavailable(date: string, timeSlot?: string): Promise<boolean> {
+    let query = supabase
+        .from('unavailable_slots')
+        .delete()
+        .eq('date', date)
+
+    if (timeSlot) {
+        query = query.eq('time_slot', timeSlot)
+    } else {
+        query = query.is('time_slot', null)
+    }
+
+    const { error } = await query
+
+    if (error) {
+        console.error('Error removing unavailable slot:', error.message)
+        return false
+    }
+    return true
+}
+

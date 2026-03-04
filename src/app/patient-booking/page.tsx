@@ -7,6 +7,7 @@ import {
     createAppointment,
     isPastOperatingHours,
     isDateFullyBooked,
+    getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
 
 // ─── Constants ───────────────────────────────────────────────
@@ -63,6 +64,8 @@ export default function PatientBookingPage() {
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [showForm, setShowForm] = useState(false)
     const [bookedSlots, setBookedSlots] = useState<string[]>([])
+    const [unavailSlots, setUnavailSlots] = useState<string[]>([])
+    const [isDayBlocked, setIsDayBlocked] = useState(false)
     const [loadingSlots, setLoadingSlots] = useState(false)
 
     // Dates that are disabled (past / past operating hours)
@@ -74,15 +77,23 @@ export default function PatientBookingPage() {
     const calYear = currentDate.getFullYear()
     const calMonth = currentDate.getMonth()
 
-    // ─── Fetch booked slots when date changes ────────────────
+    // ─── Fetch booked slots + unavailable when date changes ──
     useEffect(() => {
         let cancelled = false
         setBookedSlots([])
+        setUnavailSlots([])
+        setIsDayBlocked(false)
         setLoadingSlots(true)
         async function load() {
-            const slots = await getBookedTimeSlots(dateString)
+            const [slots, unavail] = await Promise.all([
+                getBookedTimeSlots(dateString),
+                getUnavailableSlots(dateString),
+            ])
             if (!cancelled) {
                 setBookedSlots(slots)
+                const dayBlocked = unavail.some((s) => s.time_slot === null)
+                setIsDayBlocked(dayBlocked)
+                setUnavailSlots(dayBlocked ? [] : unavail.filter((s) => s.time_slot !== null).map((s) => s.time_slot!))
                 setLoadingSlots(false)
             }
         }
@@ -167,6 +178,8 @@ export default function PatientBookingPage() {
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 bookedSlots={bookedSlots}
+                unavailSlots={unavailSlots}
+                isDayBlocked={isDayBlocked}
                 loading={loadingSlots}
                 onTimeSlotSelect={handleTimeSlotSelect}
             />
@@ -303,21 +316,25 @@ function TimeSlots({
     selectedDate,
     selectedTime,
     bookedSlots,
+    unavailSlots,
+    isDayBlocked,
     loading,
     onTimeSlotSelect,
 }: {
     selectedDate: Date
     selectedTime: string | null
     bookedSlots: string[]
+    unavailSlots: string[]
+    isDayBlocked: boolean
     loading: boolean
     onTimeSlotSelect: (time: string) => void
 }) {
     const dayName = selectedDate.toLocaleDateString('default', { weekday: 'long' })
     const formattedDate = selectedDate.toLocaleDateString('default', { month: 'numeric', day: 'numeric' })
 
-    // Check if all slots are unavailable (booked or past)
-    const allUnavailable = ALL_TIME_SLOTS.every(
-        (time) => bookedSlots.includes(time) || isTimeSlotPast(time, selectedDate)
+    // Check if all slots are unavailable (booked, past, or admin-blocked)
+    const allUnavailable = isDayBlocked || ALL_TIME_SLOTS.every(
+        (time) => bookedSlots.includes(time) || isTimeSlotPast(time, selectedDate) || unavailSlots.includes(time)
     )
 
     return (
@@ -329,8 +346,10 @@ function TimeSlots({
 
             {allUnavailable && (
                 <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-center">
-                    <p className="text-sm font-semibold text-red-500">No available slots for this day</p>
-                    <p className="text-xs text-red-400 mt-1">All time slots are either booked or past the booking window. Please select another date.</p>
+                    <p className="text-sm font-semibold text-red-500">
+                        {isDayBlocked ? 'This day is unavailable for booking' : 'No available slots for this day'}
+                    </p>
+                    <p className="text-xs text-red-400 mt-1">Please select another date.</p>
                 </div>
             )}
 
@@ -344,7 +363,8 @@ function TimeSlots({
                     ALL_TIME_SLOTS.map((time) => {
                         const booked = bookedSlots.includes(time)
                         const past = isTimeSlotPast(time, selectedDate)
-                        const unavailable = booked || past
+                        const blocked = isDayBlocked || unavailSlots.includes(time)
+                        const unavailable = booked || past || blocked
 
                         return (
                             <button
@@ -353,8 +373,8 @@ function TimeSlots({
                                 disabled={unavailable}
                                 className={`w-full py-4 px-6 border-2 rounded-lg text-center font-semibold transition-all ${booked
                                     ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed opacity-60'
-                                    : past
-                                        ? 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed opacity-60'
+                                    : past || blocked
+                                        ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                                         : selectedTime === time
                                             ? 'border-blue-500 bg-blue-500 text-white'
                                             : 'border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50'
@@ -364,6 +384,11 @@ function TimeSlots({
                                 {booked && (
                                     <span className="text-xs ml-2 font-medium">
                                         (Booked)
+                                    </span>
+                                )}
+                                {blocked && !booked && (
+                                    <span className="text-xs ml-2 font-medium">
+                                        (Unavailable)
                                     </span>
                                 )}
                             </button>
