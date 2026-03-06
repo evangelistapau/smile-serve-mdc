@@ -15,6 +15,7 @@ import {
 } from '@/lib/supabase/appointmentService'
 import type { Appointment } from '@/types/appointment'
 import type { UnavailableSlot } from '@/lib/supabase/appointmentService'
+import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -104,15 +105,17 @@ export default function AppointmentsPage() {
     useEffect(() => { loadDayData() }, [loadDayData])
 
     // ─── Fetch month appointments (for calendar badges) ─────
-    useEffect(() => {
+    const loadMonthData = useCallback(() => {
         const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
         const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
         const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
         getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
     }, [calYear, calMonth])
 
+    useEffect(() => { loadMonthData() }, [loadMonthData])
+
     // ─── Fetch week data ────────────────────────────────────
-    useEffect(() => {
+    const loadWeekData = useCallback(() => {
         if (viewMode !== 'week') return
         const dates = getWeekDates(selectedDate)
         const startDate = toDateStr(dates[0])
@@ -125,6 +128,17 @@ export default function AppointmentsPage() {
             setWeekUnavailable(unavail)
         })
     }, [viewMode, selectedDate])
+
+    useEffect(() => { loadWeekData() }, [loadWeekData])
+
+    // ─── Realtime: re-fetch everything when any change occurs ─
+    const handleRealtimeUpdate = useCallback(() => {
+        loadDayData()
+        loadMonthData()
+        loadWeekData()
+    }, [loadDayData, loadMonthData, loadWeekData])
+
+    useRealtimeAppointments(handleRealtimeUpdate)
 
     // ─── Navigation ─────────────────────────────────────────
     const handlePrev = () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import {
     getBookedTimeSlots,
@@ -9,6 +9,7 @@ import {
     isDateFullyBooked,
     getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
+import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -78,61 +79,61 @@ export default function PatientBookingPage() {
     const calMonth = currentDate.getMonth()
 
     // ─── Fetch booked slots + unavailable when date changes ──
+    const loadSlots = useCallback(async () => {
+        setLoadingSlots(true)
+        const [slots, unavail] = await Promise.all([
+            getBookedTimeSlots(dateString),
+            getUnavailableSlots(dateString),
+        ])
+        setBookedSlots(slots)
+        const dayBlocked = unavail.some((s) => s.time_slot === null)
+        setIsDayBlocked(dayBlocked)
+        setUnavailSlots(dayBlocked ? [] : unavail.filter((s) => s.time_slot !== null).map((s) => s.time_slot!))
+        setLoadingSlots(false)
+    }, [dateString])
+
     useEffect(() => {
-        let cancelled = false
         setBookedSlots([])
         setUnavailSlots([])
         setIsDayBlocked(false)
-        setLoadingSlots(true)
-        async function load() {
-            const [slots, unavail] = await Promise.all([
-                getBookedTimeSlots(dateString),
-                getUnavailableSlots(dateString),
-            ])
-            if (!cancelled) {
-                setBookedSlots(slots)
-                const dayBlocked = unavail.some((s) => s.time_slot === null)
-                setIsDayBlocked(dayBlocked)
-                setUnavailSlots(dayBlocked ? [] : unavail.filter((s) => s.time_slot !== null).map((s) => s.time_slot!))
-                setLoadingSlots(false)
-            }
-        }
-        load()
-        return () => { cancelled = true }
-    }, [dateString])
+        loadSlots()
+    }, [loadSlots])
 
     // ─── Fetch disabled & fully booked dates per month ────────
-    useEffect(() => {
-        let cancelled = false
-        async function load() {
-            const disabled = new Set<string>()
-            const fullyBooked = new Set<string>()
-            const todayStart = new Date()
-            todayStart.setHours(0, 0, 0, 0)
-            const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+    const loadMonthData = useCallback(async () => {
+        const disabled = new Set<string>()
+        const fullyBooked = new Set<string>()
+        const todayStart = new Date()
+        todayStart.setHours(0, 0, 0, 0)
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
 
-            for (let day = 1; day <= daysInMonth; day++) {
-                const d = new Date(calYear, calMonth, day)
-                const ds = toDateStr(d)
+        for (let day = 1; day <= daysInMonth; day++) {
+            const d = new Date(calYear, calMonth, day)
+            const ds = toDateStr(d)
 
-                if (d < todayStart) { disabled.add(ds); continue }
-                if (isPastOperatingHours(d, LAST_TIME_SLOT)) { disabled.add(ds); continue }
+            if (d < todayStart) { disabled.add(ds); continue }
+            if (isPastOperatingHours(d, LAST_TIME_SLOT)) { disabled.add(ds); continue }
 
-                const isFull = await isDateFullyBooked(ds, ALL_TIME_SLOTS)
-                if (isFull) {
-                    fullyBooked.add(ds)
-                    disabled.add(ds)
-                }
-            }
-
-            if (!cancelled) {
-                setDisabledDates(disabled)
-                setFullyBookedDates(fullyBooked)
+            const isFull = await isDateFullyBooked(ds, ALL_TIME_SLOTS)
+            if (isFull) {
+                fullyBooked.add(ds)
+                disabled.add(ds)
             }
         }
-        load()
-        return () => { cancelled = true }
+
+        setDisabledDates(disabled)
+        setFullyBookedDates(fullyBooked)
     }, [calYear, calMonth])
+
+    useEffect(() => { loadMonthData() }, [loadMonthData])
+
+    // ─── Realtime: re-fetch when any appointment changes ─────
+    const handleRealtimeUpdate = useCallback(() => {
+        loadSlots()
+        loadMonthData()
+    }, [loadSlots, loadMonthData])
+
+    useRealtimeAppointments(handleRealtimeUpdate)
 
     // ─── Handlers ────────────────────────────────────────────
     const handleTimeSlotSelect = (time: string) => {
