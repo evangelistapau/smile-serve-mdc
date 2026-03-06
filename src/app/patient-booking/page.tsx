@@ -448,6 +448,8 @@ function BookingFormModal({
         } catch (err: unknown) {
             if (err instanceof Error && err.message === 'SLOT_TAKEN') {
                 setError('This time slot was just booked by someone else. Please choose another slot.')
+            } else if (err instanceof Error && err.message === 'BOOKING_LIMIT') {
+                setError('You can only book up to 2 appointments per day. Please choose a different date.')
             } else {
                 setError('Something went wrong. Please try again.')
             }

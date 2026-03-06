@@ -56,6 +56,22 @@ export async function createAppointment(
 ) {
     const dbTime = toDbTime(data.appointment_time)
 
+    // Check booking limit: max 2 per day per phone number
+    const { data: phoneBookings, error: limitError } = await supabase
+        .from('appointment')
+        .select('appointment_id')
+        .eq('appointment_date', data.appointment_date)
+        .eq('phone_number', data.phone_number)
+
+    if (limitError) {
+        console.error('Error checking booking limit:', limitError.message)
+        throw new Error('CHECK_FAILED')
+    }
+
+    if (phoneBookings && phoneBookings.length >= 2) {
+        throw new Error('BOOKING_LIMIT')
+    }
+
     // Check if the slot is already taken
     const { data: existing, error: checkError } = await supabase
         .from('appointment')
