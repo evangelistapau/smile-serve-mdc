@@ -9,6 +9,7 @@ import {
     isDateFullyBooked,
     getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
+import { sendBookingConfirmationSms } from '@/lib/supabase/smsService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 // ─── Constants ───────────────────────────────────────────────
@@ -444,6 +445,18 @@ function BookingFormModal({
                 appointment_time: selectedTime,
                 purpose: purpose || '',
             })
+
+            // Fire-and-forget SMS confirmation
+            const readableDate = selectedDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+            })
+            sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
+                console.error('SMS send error (non-blocking):', err)
+            )
+
             onSuccess()
         } catch (err: unknown) {
             if (err instanceof Error && err.message === 'SLOT_TAKEN') {
