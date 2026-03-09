@@ -27,12 +27,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
     // Public pages that don't need the sidebar
     const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/reset-password' || pathname === '/patient-booking'
+    // Login-only pages that authenticated users should NOT access
+    const isLoginPage = pathname === '/' || pathname === '/login'
 
     useEffect(() => {
         const check = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
                 setAuthenticated(true)
+                if (isLoginPage) {
+                    router.push('/dashboard')
+                    return
+                }
             } else if (!isPublicPage) {
                 router.push('/')
             }
@@ -44,6 +50,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session) {
                 setAuthenticated(true)
+                if (isLoginPage) router.push('/dashboard')
             } else {
                 setAuthenticated(false)
                 if (!isPublicPage) router.push('/')
@@ -51,9 +58,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         })
 
         return () => subscription.unsubscribe()
-    }, [router, isPublicPage])
+    }, [router, isPublicPage, isLoginPage])
 
-    // Public pages — render directly, no sidebar
+    // Login pages: wait for auth check; if authenticated, show nothing while redirect fires
+    if (isLoginPage) {
+        if (checking || authenticated) return null
+        return <>{children}</>
+    }
+
+    // Other public pages — render directly, no sidebar
     if (isPublicPage) {
         return <>{children}</>
     }
