@@ -9,7 +9,7 @@ import {
     isDateFullyBooked,
     getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
-import { sendBookingConfirmationSms } from '@/lib/supabase/smsService'
+import { sendBookingConfirmationSms, sendBookingReminderSms } from '@/lib/supabase/smsService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 // ─── Constants ───────────────────────────────────────────────
@@ -455,6 +455,11 @@ function BookingFormModal({
             })
             sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
                 console.error('SMS send error (non-blocking):', err)
+            )
+
+            // Schedule reminder SMS 5 hours before appointment
+            sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
+                console.error('Reminder SMS scheduling error (non-blocking):', err)
             )
 
             onSuccess()

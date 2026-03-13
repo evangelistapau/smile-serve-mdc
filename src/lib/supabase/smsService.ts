@@ -89,3 +89,40 @@ export async function sendBookingConfirmationSms(
         return false
     }
 }
+
+// ─── Send Booking Reminder SMS (scheduled 5h before) ────────
+
+export async function sendBookingReminderSms(
+    patientName: string,
+    patientPhone: string,
+    appointmentDate: string,
+    appointmentTime: string,
+    appointmentDateISO: string   // YYYY-MM-DD for send_at computation
+): Promise<boolean> {
+    try {
+        const res = await fetch('/api/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'booking_reminder',
+                patientName,
+                patientPhone,
+                appointmentDate,
+                appointmentTime,
+                appointmentDateISO,
+            }),
+        })
+
+        if (!res.ok) {
+            console.error('Reminder SMS scheduling failed with status:', res.status)
+            return false
+        }
+
+        console.log('Booking reminder SMS scheduled successfully')
+        return true
+    } catch (err) {
+        console.error('Error scheduling booking reminder SMS:', err)
+        return false
+    }
+}
+
