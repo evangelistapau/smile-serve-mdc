@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, X, Settings, Lock } from 'lucide-react'
 import {
     getAppointmentsForDate,
@@ -72,7 +73,15 @@ function getWeekDates(date: Date): Date[] {
 
 export default function AppointmentsPage() {
     const today = new Date()
-    const [viewMode, setViewMode] = useState<ViewMode>('calendar')
+    const searchParams = useSearchParams()
+
+    // Read ?view=day|week|calendar from URL, default to 'calendar'
+    const initialView = (searchParams.get('view') as ViewMode) ?? 'calendar'
+    const validViews: ViewMode[] = ['calendar', 'day', 'week']
+    const [viewMode, setViewMode] = useState<ViewMode>(
+        validViews.includes(initialView) ? initialView : 'calendar'
+    )
+
     const [selectedDate, setSelectedDate] = useState(today)
     const [calMonth, setCalMonth] = useState(today.getMonth())
     const [calYear, setCalYear] = useState(today.getFullYear())
@@ -131,7 +140,7 @@ export default function AppointmentsPage() {
 
     useEffect(() => { loadWeekData() }, [loadWeekData])
 
-    // ─── Realtime: re-fetch everything when any change occurs ─
+    // ─── Realtime ───────────────────────────────────────────
     const handleRealtimeUpdate = useCallback(() => {
         loadDayData()
         loadMonthData()
@@ -179,12 +188,10 @@ export default function AppointmentsPage() {
         const success = await deleteAppointment(id)
         if (success) {
             loadDayData()
-            // Re-fetch month data for calendar badges
             const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
             const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
             const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
             getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
-            // Re-fetch week data if in week view
             if (viewMode === 'week') {
                 const dates = getWeekDates(selectedDate)
                 getAppointmentsForDateRange(toDateStr(dates[0]), toDateStr(dates[6])).then(setWeekAppointments)
@@ -205,7 +212,7 @@ export default function AppointmentsPage() {
         bookingCounts[a.appointment_date] = (bookingCounts[a.appointment_date] || 0) + 1
     })
 
-    // ─── Check if day is unavailable ────────────────────────
+    // ─── Unavailable flags ───────────────────────────────────
     const isDayUnavailable = unavailableSlots.some((s) => s.time_slot === null)
     const unavailableTimeSlots = new Set(
         unavailableSlots.filter((s) => s.time_slot !== null).map((s) => s.time_slot!)
@@ -353,14 +360,12 @@ function CalendarView({
         <div className="flex gap-6">
             {/* Calendar grid */}
             <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                {/* Day headers */}
                 <div className="grid grid-cols-7 border-b border-gray-100">
                     {DAY_LABELS.map((d) => (
                         <div key={d} className="text-center text-xs font-semibold text-gray-400 py-3">{d}</div>
                     ))}
                 </div>
 
-                {/* Day cells */}
                 <div className="grid grid-cols-7">
                     {cells.map((date, i) => {
                         if (!date) return <div key={`e-${i}`} className="border-b border-r border-gray-50 h-20" />
@@ -472,7 +477,6 @@ function DayView({
 
     return (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
                 {!isDayUnavailable && (
@@ -503,12 +507,9 @@ function DayView({
 
                         return (
                             <div key={time} className="flex items-stretch">
-                                {/* Time label */}
                                 <div className="w-28 flex-shrink-0 flex items-center justify-end pr-4 py-4">
                                     <span className="text-sm text-gray-500 font-medium">{time}</span>
                                 </div>
-
-                                {/* Slot content */}
                                 <div className="flex-1 py-3 pr-4">
                                     {isUnavailable ? (
                                         <div className="bg-gray-100 rounded-lg px-4 py-3 text-center">
@@ -560,14 +561,12 @@ function WeekView({
 }) {
     const weekDates = getWeekDates(selectedDate)
 
-    // Build lookup: date -> time -> appointment
     const apptMap: Record<string, Record<string, Appointment>> = {}
     appointments.forEach((a) => {
         if (!apptMap[a.appointment_date]) apptMap[a.appointment_date] = {}
         apptMap[a.appointment_date][a.appointment_time] = a
     })
 
-    // Build unavailable set: "date|time" or "date|full"
     const unavailSet = new Set<string>()
     unavailableSlots.forEach((s) => {
         if (s.time_slot === null) {
@@ -695,7 +694,6 @@ function AvailabilityModal({
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md relative max-h-[85vh] flex flex-col">
-                {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-900">Availability: {formattedDate}</h2>
                     <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 transition">
@@ -704,7 +702,6 @@ function AvailabilityModal({
                 </div>
 
                 <div className="px-6 py-5 overflow-y-auto flex-1">
-                    {/* Full day toggle */}
                     <button
                         onClick={handleMarkDayUnavailable}
                         disabled={saving === 'day'}
