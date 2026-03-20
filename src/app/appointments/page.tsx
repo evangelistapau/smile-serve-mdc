@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, X, Settings, Lock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, Settings, Lock, ExternalLink } from 'lucide-react'
 import {
     getAppointmentsForDate,
     getAppointmentsForDateRange,
@@ -223,20 +223,32 @@ export default function AppointmentsPage() {
 
             {/* ═══ Toolbar ═══ */}
             <div className="flex items-center justify-between mb-5">
-                {/* View toggle */}
-                <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-                    {(['calendar', 'day', 'week'] as ViewMode[]).map((mode) => (
-                        <button
-                            key={mode}
-                            onClick={() => setViewMode(mode)}
-                            className={`px-4 py-2 text-sm font-medium transition ${viewMode === mode
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                        </button>
-                    ))}
+                {/* View toggle + Book Appointment */}
+                <div className="flex items-center gap-3">
+                    <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+                        {(['calendar', 'day', 'week'] as ViewMode[]).map((mode) => (
+                            <button
+                                key={mode}
+                                onClick={() => setViewMode(mode)}
+                                className={`px-4 py-2 text-sm font-medium transition ${viewMode === mode
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    <a
+                        href="/patient-booking"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-400 text-white text-sm font-medium rounded-lg hover:bg-blue-500 active:scale-[0.97] transition shadow-sm"
+                    >
+                        Book Appointment
+                        <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                 </div>
 
                 {/* Navigation */}
@@ -249,6 +261,8 @@ export default function AppointmentsPage() {
                         <ChevronRight className="w-5 h-5" />
                     </button>
                 </div>
+
+
             </div>
 
             {/* ═══ Views ═══ */}
@@ -268,6 +282,7 @@ export default function AppointmentsPage() {
                         setCalYear(d.getFullYear())
                     }}
                     onCustomize={() => setShowAvailabilityModal(true)}
+                    onDeleteAppointment={handleDeleteAppointment}
                 />
             )}
 
@@ -325,6 +340,7 @@ function CalendarView({
     loading,
     onDateChange,
     onCustomize,
+    onDeleteAppointment,
 }: {
     calYear: number
     calMonth: number
@@ -336,6 +352,7 @@ function CalendarView({
     loading: boolean
     onDateChange: (d: Date) => void
     onCustomize: () => void
+    onDeleteAppointment: (id: string) => void
 }) {
     const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay()
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
@@ -427,8 +444,15 @@ function CalendarView({
                         {dayAppointments.map((appt) => (
                             <div
                                 key={appt.appointment_id}
-                                className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3"
+                                className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 relative group"
                             >
+                                <button
+                                    onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
+                                    className="absolute top-2 right-2 p-0.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition opacity-0 group-hover:opacity-100"
+                                    title="Cancel appointment"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
                                 <p className="text-sm font-semibold text-gray-900">{appt.purpose || 'Appointment'}</p>
                                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
                                     <span>⏰</span> {appt.appointment_time}

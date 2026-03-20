@@ -67,7 +67,7 @@ export default function SettingsPage() {
     const needsSetup = !displayName
 
     return (
-        <div className="max-w-4xl space-y-6">
+        <div className="w-full space-y-6">
             {/* ═══ Account Information ═══ */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
                 <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
