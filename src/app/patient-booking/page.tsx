@@ -10,6 +10,7 @@ import {
     getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
 import { sendBookingConfirmationSms, sendBookingReminderSms } from '@/lib/supabase/smsService'
+import { sendBookingConfirmationEmail } from '@/lib/supabase/emailService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 // ─── Constants ───────────────────────────────────────────────
@@ -453,14 +454,21 @@ function BookingFormModal({
                 day: 'numeric',
                 year: 'numeric',
             })
-            sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
-                console.error('SMS send error (non-blocking):', err)
-            )
+            // sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
+            //     console.error('SMS send error (non-blocking):', err)
+            // )
 
-            // Schedule reminder SMS 5 hours before appointment
-            sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
-                console.error('Reminder SMS scheduling error (non-blocking):', err)
-            )
+            // // Schedule reminder SMS 5 hours before appointment
+            // sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
+            //     console.error('Reminder SMS scheduling error (non-blocking):', err)
+            // )
+
+            // Fire-and-forget email confirmation (only if email provided)
+            if (email) {
+                sendBookingConfirmationEmail(name, email, readableDate, selectedTime, purpose).catch((err) =>
+                    console.error('Email send error (non-blocking):', err)
+                )
+            }
 
             onSuccess()
         } catch (err: unknown) {
