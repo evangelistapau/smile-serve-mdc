@@ -222,7 +222,7 @@ export default function AppointmentsPage() {
         <div className="space-y-0">
 
             {/* ═══ Toolbar ═══ */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-5">
                 {/* View toggle + Book Appointment */}
                 <div className="flex items-center gap-3">
                     <div className="flex border border-gray-200 rounded-lg overflow-hidden">
@@ -374,7 +374,7 @@ function CalendarView({
     })
 
     return (
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
             {/* Calendar grid */}
             <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="grid grid-cols-7 border-b border-gray-100">
@@ -419,7 +419,7 @@ function CalendarView({
             </div>
 
             {/* Sidebar */}
-            <div className="w-72 bg-white border border-gray-200 rounded-xl shadow-sm p-5 self-start">
+            <div className="w-full lg:w-72 bg-white border border-gray-200 rounded-xl shadow-sm p-5 self-start">
                 <h3 className="text-base font-bold text-gray-900 mb-4">{formattedSelectedDate}</h3>
 
                 <button
@@ -531,7 +531,7 @@ function DayView({
 
                         return (
                             <div key={time} className="flex items-stretch">
-                                <div className="w-28 flex-shrink-0 flex items-center justify-end pr-4 py-4">
+                                <div className="w-16 md:w-28 flex-shrink-0 flex items-center justify-end pr-3 md:pr-4 py-4">
                                     <span className="text-sm text-gray-500 font-medium">{time}</span>
                                 </div>
                                 <div className="flex-1 py-3 pr-4">

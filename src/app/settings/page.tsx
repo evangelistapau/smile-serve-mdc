@@ -98,7 +98,7 @@ export default function SettingsPage() {
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-x-12 gap-y-6 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-6">
                                 {/* Display Name */}
                                 <div>
                                     <p className="text-xs text-gray-400 mb-1">Display Name</p>

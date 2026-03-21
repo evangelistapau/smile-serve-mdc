@@ -169,7 +169,7 @@ export default function SmsSettingsPage() {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex gap-2 mb-6">
+                <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
                     {["all", "sent", "pending"].map((status) => (
                         <button
                             key={status}
@@ -188,7 +188,7 @@ export default function SmsSettingsPage() {
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                     {filteredMessages.map((msg) => (
                         <div key={msg.id} className="border border-border rounded-lg p-4 hover:bg-gray-50 transition">
-                            <div className="flex items-start justify-between mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
                                 <div>
                                     <h3 className="font-semibold text-foreground">{msg.patientName}</h3>
                                     <p className="text-sm text-muted-foreground">{msg.patientPhone}</p>

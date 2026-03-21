@@ -77,14 +77,14 @@ export default function DashboardPage() {
 
     return (
         // Fixed full-height layout — no page scroll
-        <div className="flex flex-col h-full overflow-hidden gap-5">
+        <div className="flex flex-col md:h-full md:overflow-hidden gap-5">
 
             {/* ── Greeting ── */}
             <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                     {getTimeGreeting()}, <span className="text-blue-600">Dr. {adminName}</span>
                 </h1>
-                <p className="text-sm text-gray-400 mt-0.5">Here's what's happening at your clinic today.</p>
+                <p className="text-xs md:text-sm text-gray-400 mt-0.5">Here's what's happening at your clinic today.</p>
             </div>
 
             {/* ── Stat Cards ── */}
@@ -127,7 +127,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Main content row — fills remaining height ── */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="md:flex-1 md:min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
 
                 {/* Weekly chart — left 2/3 */}
                 <Card className="lg:col-span-2 flex flex-col overflow-hidden border border-gray-100">

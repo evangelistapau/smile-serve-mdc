@@ -163,7 +163,7 @@ export default function PatientBookingPage() {
 
     // ─── Render ──────────────────────────────────────────────
     return (
-        <main className="flex h-screen bg-background">
+        <main className="flex flex-col md:flex-row min-h-screen md:h-screen bg-background">
             {/* ═══ Calendar (left) ═══ */}
             <Calendar
                 calYear={calYear}
@@ -237,10 +237,10 @@ function Calendar({
     todayStart.setHours(0, 0, 0, 0)
 
     return (
-        <div className="w-1/2 p-8 border-r border-gray-200 flex flex-col">
+        <div className="w-full md:w-1/2 p-4 md:p-8 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-light">
+                <h2 className="text-2xl md:text-3xl font-light">
                     <span className="text-blue-500 font-bold">{MONTH_NAMES[calMonth]}</span>{' '}
                     <span className="text-gray-400">{calYear}</span>
                 </h2>
@@ -341,8 +341,8 @@ function TimeSlots({
     )
 
     return (
-        <div className="w-1/2 p-8 bg-background flex flex-col">
-            <h3 className="text-3xl font-light mb-8">
+        <div className="w-full md:w-1/2 p-4 md:p-8 bg-background flex flex-col">
+            <h3 className="text-2xl md:text-3xl font-light mb-6 md:mb-8">
                 <span className="font-bold">{dayName}</span>
                 <span className="text-gray-400">, {formattedDate}</span>
             </h3>

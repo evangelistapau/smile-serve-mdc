@@ -104,7 +104,7 @@ export default function AddPatientModal({
                 <form onSubmit={handleSubmit}>
 
                     {/* Row 1: First, Middle, Last Name */}
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 First Name <span className="text-red-500">*</span>
@@ -148,7 +148,7 @@ export default function AddPatientModal({
                     </div>
 
                     {/* Row 2: Phone & Age */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 Phone <span className="text-red-500">*</span>
@@ -206,7 +206,7 @@ export default function AddPatientModal({
                     </div>
 
                     {/* Row 4: Gender & Marital Status */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 Gender <span className="text-red-500">*</span>

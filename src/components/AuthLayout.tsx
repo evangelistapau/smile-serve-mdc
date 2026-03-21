@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import Sidebar from '@/components/Sidebar'
+import { Menu } from 'lucide-react'
 
 const pageTitles: Record<string, string> = {
     '/dashboard': 'Dashboard',
@@ -24,6 +25,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     const pathname = usePathname()
     const [checking, setChecking] = useState(true)
     const [authenticated, setAuthenticated] = useState(false)
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
     // Public pages that don't need the sidebar
     const isPublicPage = pathname === '/' || pathname === '/login' || pathname === '/reset-password' || pathname === '/patient-booking'
@@ -60,6 +62,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         return () => subscription.unsubscribe()
     }, [router, isPublicPage, isLoginPage])
 
+    // Close mobile sidebar on route change
+    useEffect(() => {
+        setMobileSidebarOpen(false)
+    }, [pathname])
+
     // Login pages: wait for auth check; if authenticated, show nothing while redirect fires
     if (isLoginPage) {
         if (checking || authenticated) return null
@@ -89,16 +96,27 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
     // Authenticated — sidebar + content
     return (
-        <div className="flex h-screen bg-gray-50">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex md:h-screen bg-gray-50">
+            <Sidebar
+                mobileOpen={mobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+            />
+            <div className="flex-1 flex flex-col md:overflow-hidden min-w-0">
                 {/* Top Bar */}
-                <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-                    <h2 className="text-2xl font-bold text-gray-900">{pageTitle}</h2>
+                <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 shadow-sm flex items-center gap-3">
+                    {/* Mobile hamburger */}
+                    <button
+                        onClick={() => setMobileSidebarOpen(true)}
+                        className="md:hidden p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                        aria-label="Open menu"
+                    >
+                        <Menu className="w-5 h-5" />
+                    </button>
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900">{pageTitle}</h2>
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-auto p-6">
+                <div className="flex-1 overflow-auto p-3 md:p-6">
                     {children}
                 </div>
             </div>
