@@ -10,7 +10,7 @@ import {
     getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
 import { sendBookingConfirmationSms, sendBookingReminderSms } from '@/lib/supabase/smsService'
-// import { sendBookingConfirmationEmail } from '@/lib/supabase/emailService'
+
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 // ─── Constants ───────────────────────────────────────────────
