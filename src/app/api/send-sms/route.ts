@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
             .replace(/{appointment_date}/g, appointmentDate)
             .replace(/{appointment_time}/g, appointmentTime);
 
-        return await sendSms(patientPhone, message, settings.sender_number);
+        return await sendSms(patientPhone, message, settings.sender_number, undefined, {
+            patientName,
+            messageType: 'confirmation',
+        });
     }
 
     // ─── Booking Reminder (scheduled 5 hours before appointment) ──
@@ -72,7 +75,10 @@ export async function POST(req: NextRequest) {
         const sendAt = computeReminderTime(appointmentDateISO, appointmentTime);
         console.log("Scheduling reminder SMS at:", sendAt);
 
-        return await sendSms(patientPhone, message, settings.sender_number, sendAt);
+        return await sendSms(patientPhone, message, settings.sender_number, sendAt, {
+            patientName,
+            messageType: 'reminder',
+        });
     }
 
     // Direct SMS send (phone, message, from provided by caller)
@@ -98,8 +104,7 @@ function computeReminderTime(appointmentDate: string, appointmentTime: string): 
     const reminderMs = appointmentMs - 5 * 60 * 60 * 1000; // minus 5 hours
 
     // Format back to ISO 8601 with +08:00 offset
-    const d = new Date(reminderMs);
-    // Convert UTC to +08:00
+    const d = new Date(reminderMs)
     const phMs = d.getTime() + 8 * 60 * 60 * 1000;
     const ph = new Date(phMs);
     const yyyy = ph.getUTCFullYear();
@@ -111,7 +116,18 @@ function computeReminderTime(appointmentDate: string, appointmentTime: string): 
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}+08:00`;
 }
 
-async function sendSms(phone: string, message: string, from: string, sendAt?: string) {
+interface LogMeta {
+    patientName?: string
+    messageType?: string
+}
+
+async function sendSms(
+    phone: string,
+    message: string,
+    from: string,
+    sendAt?: string,
+    logMeta?: LogMeta,
+) {
     // Format Philippine number
     let formattedPhone = phone.trim();
     if (formattedPhone.startsWith("0"))
@@ -145,5 +161,23 @@ async function sendSms(phone: string, message: string, from: string, sendAt?: st
 
     const data = await res.json();
     console.log("API response:", data);
+
+    // Log to sms_logs as pending (webhook will update to sent/failed later)
+    if (res.ok && logMeta && data?.data?.id) {
+        const { error: logError } = await supabaseAdmin
+            .from('sms_logs')
+            .insert({
+                message_id: data.data.id,
+                patient_name: logMeta.patientName ?? null,
+                patient_phone: formattedPhone,
+                message_type: logMeta.messageType ?? 'confirmation',
+                content: message,
+                status: 'pending',
+                sent_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+        if (logError) console.error('Failed to log SMS:', logError.message)
+    }
+
     return Response.json(data, { status: res.status });
 }

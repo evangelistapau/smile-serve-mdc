@@ -90,6 +90,34 @@ export async function sendBookingConfirmationSms(
     }
 }
 
+// ─── SMS Logs ────────────────────────────────────────────────
+
+export interface SmsLog {
+    id: string
+    message_id: string
+    patient_name: string | null
+    patient_phone: string
+    message_type: string           // 'confirmation' | 'reminder'
+    content: string | null
+    status: string                 // 'pending' | 'sent' | 'failed'
+    sent_at: string
+    updated_at: string
+}
+
+export async function getSmsLogs(limit = 50): Promise<SmsLog[]> {
+    const { data, error } = await supabase
+        .from('sms_logs')
+        .select('*')
+        .order('sent_at', { ascending: false })
+        .limit(limit)
+
+    if (error) {
+        console.error('Error fetching SMS logs:', error.message)
+        return []
+    }
+    return data as SmsLog[]
+}
+
 // ─── Send Booking Reminder SMS (scheduled 5h before) ────────
 
 export async function sendBookingReminderSms(
