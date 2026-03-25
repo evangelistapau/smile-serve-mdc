@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { toast } from 'sonner'
 import {
     getBookedTimeSlots,
     createAppointment,
@@ -485,6 +486,7 @@ function BookingFormModal({
                 )
             }
 
+            toast.success('Successfully booked! Check sms or email (if provided) for confirmation message.')
             onSuccess()
         } catch (err: unknown) {
             if (err instanceof Error && err.message === 'SLOT_TAKEN') {

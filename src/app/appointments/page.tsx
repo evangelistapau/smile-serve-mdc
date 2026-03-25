@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, X, Settings, Lock, ExternalLink } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, Settings, Lock, Unlock, ExternalLink, Clock, User } from 'lucide-react'
 import {
     getAppointmentsForDate,
     getAppointmentsForDateRange,
@@ -96,6 +96,7 @@ export default function AppointmentsPage() {
 
     // Modal
     const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
+    const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
 
     const dateStr = toDateStr(selectedDate)
 
@@ -184,8 +185,9 @@ export default function AppointmentsPage() {
         }
     }
 
-    const handleDeleteAppointment = async (id: string) => {
-        const success = await deleteAppointment(id)
+    const confirmDelete = async () => {
+        if (!appointmentToDelete) return
+        const success = await deleteAppointment(appointmentToDelete)
         if (success) {
             loadDayData()
             const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
@@ -197,6 +199,7 @@ export default function AppointmentsPage() {
                 getAppointmentsForDateRange(toDateStr(dates[0]), toDateStr(dates[6])).then(setWeekAppointments)
             }
         }
+        setAppointmentToDelete(null)
     }
 
     // ─── Header label ───────────────────────────────────────
@@ -282,7 +285,7 @@ export default function AppointmentsPage() {
                         setCalYear(d.getFullYear())
                     }}
                     onCustomize={() => setShowAvailabilityModal(true)}
-                    onDeleteAppointment={handleDeleteAppointment}
+                    onDeleteAppointment={setAppointmentToDelete}
                 />
             )}
 
@@ -294,10 +297,14 @@ export default function AppointmentsPage() {
                     unavailableTimeSlots={unavailableTimeSlots}
                     loading={loading}
                     onMakeDayUnavailable={async () => {
-                        await setSlotUnavailable(dateStr)
+                        if (isDayUnavailable) {
+                            await removeSlotUnavailable(dateStr)
+                        } else {
+                            await setSlotUnavailable(dateStr)
+                        }
                         loadDayData()
                     }}
-                    onDeleteAppointment={handleDeleteAppointment}
+                    onDeleteAppointment={setAppointmentToDelete}
                 />
             )}
 
@@ -306,7 +313,7 @@ export default function AppointmentsPage() {
                     selectedDate={selectedDate}
                     appointments={weekAppointments}
                     unavailableSlots={weekUnavailable}
-                    onDeleteAppointment={handleDeleteAppointment}
+                    onDeleteAppointment={setAppointmentToDelete}
                 />
             )}
 
@@ -319,6 +326,14 @@ export default function AppointmentsPage() {
                         setShowAvailabilityModal(false)
                         loadDayData()
                     }}
+                />
+            )}
+
+            {/* ═══ Delete Confirmation Modal ═══ */}
+            {appointmentToDelete && (
+                <DeleteConfirmationModal
+                    onConfirm={confirmDelete}
+                    onCancel={() => setAppointmentToDelete(null)}
                 />
             )}
         </div>
@@ -374,52 +389,52 @@ function CalendarView({
     })
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6">
-            {/* Calendar grid */}
-            <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-7 border-b border-gray-100">
-                    {DAY_LABELS.map((d) => (
-                        <div key={d} className="text-center text-xs font-semibold text-gray-400 py-3">{d}</div>
-                    ))}
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Calendar Grid */}
+            <div className="lg:col-span-2">
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden p-4 md:p-6">
+                    <div className="grid grid-cols-7 gap-2 mb-2">
+                        {DAY_LABELS.map((d) => (
+                            <div key={d} className="text-center text-sm font-medium text-gray-400 py-2">{d}</div>
+                        ))}
+                    </div>
 
-                <div className="grid grid-cols-7">
-                    {cells.map((date, i) => {
-                        if (!date) return <div key={`e-${i}`} className="border-b border-r border-gray-50 h-20" />
+                    <div className="grid grid-cols-7 gap-1 md:gap-2">
+                        {cells.map((date, i) => {
+                            if (!date) return <div key={`e-${i}`} className="aspect-square bg-gray-50/50 rounded-lg" />
 
-                        const ds = toDateStr(date)
-                        const isSelected = isSameDay(date, selectedDate)
-                        const isToday = isSameDay(date, todayStart)
-                        const count = bookingCounts[ds] || 0
+                            const ds = toDateStr(date)
+                            const isSelected = isSameDay(date, selectedDate)
+                            const isToday = isSameDay(date, todayStart)
+                            const count = bookingCounts[ds] || 0
 
-                        return (
-                            <button
-                                key={ds}
-                                onClick={() => onDateChange(date)}
-                                className={`
-                                    relative border-b border-r border-gray-50 h-20 p-2 text-sm font-medium transition-all
-                                    flex flex-col items-center justify-start pt-3
-                                    ${isSelected
-                                        ? 'bg-blue-500 text-white'
-                                        : isToday
-                                            ? 'bg-blue-50 text-blue-600'
-                                            : 'text-gray-700 hover:bg-blue-50 cursor-pointer'}
-                                `}
-                            >
-                                <span>{date.getDate()}</span>
-                                {count > 0 && (
-                                    <span className={`text-[10px] mt-1 ${isSelected ? 'text-white/80' : 'text-blue-500'}`}>
-                                        {count} booking{count > 1 ? 's' : ''}
-                                    </span>
-                                )}
-                            </button>
-                        )
-                    })}
+                            return (
+                                <button
+                                    key={ds}
+                                    onClick={() => onDateChange(date)}
+                                    className={`
+                                        aspect-square flex flex-col items-center justify-center rounded-lg p-1 md:p-2 text-sm transition-colors
+                                        ${isSelected
+                                            ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-1'
+                                            : 'bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer'}
+                                    `}
+                                >
+                                    <div className={`font-medium ${isToday && !isSelected ? 'text-blue-600' : ''}`}>{date.getDate()}</div>
+                                    {count > 0 && (
+                                        <div className={`text-[10px] sm:text-xs mt-0.5 md:mt-1 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
+                                            <span className="hidden sm:inline">{count} booking{count > 1 ? 's' : ''}</span>
+                                            <span className="sm:hidden">{count}</span>
+                                        </div>
+                                    )}
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
 
             {/* Sidebar */}
-            <div className="w-full lg:w-72 bg-white border border-gray-200 rounded-xl shadow-sm p-5 self-start">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 self-start">
                 <h3 className="text-base font-bold text-gray-900 mb-4">{formattedSelectedDate}</h3>
 
                 <button
@@ -444,22 +459,25 @@ function CalendarView({
                         {dayAppointments.map((appt) => (
                             <div
                                 key={appt.appointment_id}
-                                className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 relative group"
+                                className="border border-gray-200 rounded-lg p-3 bg-blue-50 relative group flex flex-col"
                             >
                                 <button
                                     onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
-                                    className="absolute top-2 right-2 p-0.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition opacity-0 group-hover:opacity-100"
-                                    title="Cancel appointment"
+                                    className="absolute top-2 right-2 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition opacity-0 group-hover:opacity-100 md:opacity-100"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>
-                                <p className="text-sm font-semibold text-gray-900">{appt.purpose || 'Appointment'}</p>
-                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
-                                    <span>⏰</span> {appt.appointment_time}
-                                </p>
-                                <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                                    <span>👤</span> {appt.patient_name}
-                                </p>
+                                <div className="font-medium text-sm text-gray-900 pr-5">{appt.patient_name || 'Appointment'}</div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {appt.appointment_time}
+                                </div>
+                                {appt.purpose && (
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                        <User className="w-3.5 h-3.5" />
+                                        {appt.purpose}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -500,18 +518,16 @@ function DayView({
     appointments.forEach((a) => { apptByTime[a.appointment_time] = a })
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden pb-5">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
-                {!isDayUnavailable && (
-                    <button
-                        onClick={onMakeDayUnavailable}
-                        className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
-                    >
-                        <Lock className="w-3.5 h-3.5" />
-                        Make Day Unavailable
-                    </button>
-                )}
+                <span className="text-base font-semibold text-gray-700">{dayLabel}</span>
+                <button
+                    onClick={onMakeDayUnavailable}
+                    className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md transition ${isDayUnavailable ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}
+                >
+                    {isDayUnavailable ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                    {isDayUnavailable ? 'Make Day Available' : 'Make Day Unavailable'}
+                </button>
             </div>
 
             {loading ? (
@@ -524,37 +540,36 @@ function DayView({
                     <p className="text-sm font-semibold text-red-500">This entire day is marked unavailable.</p>
                 </div>
             ) : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 pt-4">
                     {ALL_TIME_SLOTS.map((time) => {
                         const appt = apptByTime[time]
                         const isUnavailable = unavailableTimeSlots.has(time)
 
                         return (
                             <div key={time} className="flex items-stretch">
-                                <div className="w-16 md:w-28 flex-shrink-0 flex items-center justify-end pr-3 md:pr-4 py-4">
-                                    <span className="text-sm text-gray-500 font-medium">{time}</span>
+                                <div className="w-20 sm:w-24 md:w-28 flex-shrink-0 flex items-center justify-end pr-2 md:pr-4 py-2">
+                                    <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{time}</span>
                                 </div>
-                                <div className="flex-1 py-3 pr-4">
+                                <div className="flex-1 py-1 pr-3 md:pr-4 overflow-hidden">
                                     {isUnavailable ? (
-                                        <div className="bg-gray-100 rounded-lg px-4 py-3 text-center">
+                                        <div className="bg-gray-100 rounded-md px-3 py-3 text-center h-full flex items-center justify-center">
                                             <span className="text-sm text-gray-400 font-medium">Unavailable</span>
                                         </div>
                                     ) : appt ? (
-                                        <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
+                                        <div className="bg-blue-50 border border-blue-100 rounded-md px-3 py-1.5 flex items-center justify-between">
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900">{appt.patient_name}</p>
-                                                <p className="text-xs text-blue-500 mt-0.5">⚕ {appt.purpose || 'Appointment'}</p>
+                                                <p className="text-sm font-semibold text-gray-900 leading-tight">{appt.patient_name}</p>
+                                                <p className="text-[11px] text-blue-500 mt-0.5"> {appt.purpose || 'Appointment'}</p>
                                             </div>
                                             <button
                                                 onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
                                                 className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition"
-                                                title="Cancel appointment"
                                             >
-                                                <X className="w-4 h-4" />
+                                                <X className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="bg-green-50 border border-green-100 rounded-lg px-4 py-3 text-center">
+                                        <div className="bg-green-50 border border-green-100 rounded-md px-3 py-3 text-center h-full flex items-center justify-center">
                                             <span className="text-sm text-green-600 font-medium">Available</span>
                                         </div>
                                     )}
@@ -601,7 +616,7 @@ function WeekView({
     })
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-auto">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-auto pb-5">
             <table className="w-full text-sm border-collapse">
                 <thead>
                     <tr className="border-b border-gray-100">
@@ -638,24 +653,23 @@ function WeekView({
                                 return (
                                     <td key={ds} className="px-1.5 py-1.5">
                                         {isDayFull || isSlotUnavail ? (
-                                            <div className="bg-gray-100 rounded px-2 py-2 text-center">
-                                                <span className="text-[11px] text-gray-400">Unavailable</span>
+                                            <div className="bg-gray-100 rounded-md px-2 py-3 text-center h-full flex items-center justify-center">
+                                                <span className="text-[11px] text-gray-400 font-medium">Unavailable</span>
                                             </div>
                                         ) : appt ? (
-                                            <div className="bg-blue-50 border border-blue-100 rounded px-2 py-2 relative group">
-                                                <p className="text-xs font-semibold text-gray-800 truncate">{appt.patient_name}</p>
-                                                <p className="text-[10px] text-blue-500 truncate">{appt.purpose || 'Appointment'}</p>
+                                            <div className="bg-blue-50 border border-blue-100 rounded-md px-2 py-1.5 relative group">
+                                                <p className="text-sm font-semibold text-gray-900 leading-tight truncate">{appt.patient_name}</p>
+                                                <p className="text-[11px] text-blue-500 mt-0.5 truncate">{appt.purpose || 'Appointment'}</p>
                                                 <button
                                                     onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
-                                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                                                    title="Cancel"
+                                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center transition"
                                                 >
                                                     <X className="w-2.5 h-2.5" />
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="bg-green-50 rounded px-2 py-2 text-center">
-                                                <span className="text-[11px] text-green-600">Available</span>
+                                            <div className="bg-green-50 border border-green-100 rounded-md px-2 py-3 text-center h-full flex items-center justify-center">
+                                                <span className="text-[11px] text-green-600 font-medium">Available</span>
                                             </div>
                                         )}
                                     </td>
@@ -763,6 +777,43 @@ function AvailabilityModal({
                             )
                         })}
                     </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ═════════════════════════════════════════════════════════════
+//  Delete Confirmation Modal
+// ═════════════════════════════════════════════════════════════
+
+function DeleteConfirmationModal({
+    onConfirm,
+    onCancel,
+}: {
+    onConfirm: () => void
+    onCancel: () => void
+}) {
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 relative">
+                <h2 className="text-lg font-bold text-gray-900 mb-3">Remove Appointment</h2>
+                <p className="text-sm text-gray-600 mb-6">
+                    Are you sure you want to remove this appointment? This indicates that it has either been completed or canceled.
+                </p>
+                <div className="flex gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 py-2 px-4 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+                    >
+                        No
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition"
+                    >
+                        Yes
+                    </button>
                 </div>
             </div>
         </div>
