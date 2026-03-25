@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, Lock, Pencil, Check, X, History, Mail } from 'lucide-react'
+import { User, Lock, Pencil, Check, X, History, Mail, Database } from 'lucide-react'
 import {
     getAccountInfo,
     updateDisplayName,
     getLoginHistory,
     getBrevoEmailLimit,
+    getDbSize,
     AccountInfo,
     LoginHistoryEntry,
     BrevoEmailLimit,
+    DbSizeInfo,
 } from '@/lib/supabase/settingsService'
 
 // ═════════════════════════════════════════════════════════════
@@ -25,11 +27,12 @@ export default function SettingsPage() {
     const [loadingHistory, setLoadingHistory] = useState(true)
     const [brevo, setBrevo] = useState<BrevoEmailLimit | null>(null)
     const [loadingBrevo, setLoadingBrevo] = useState(true)
+    const [dbSize, setDbSize] = useState<DbSizeInfo | null>(null)
+    const [loadingDbSize, setLoadingDbSize] = useState(true)
 
     // Edit state
     const [editing, setEditing] = useState(false)
     const [editName, setEditName] = useState('')
-    const [editUsername, setEditUsername] = useState('')
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
@@ -45,33 +48,34 @@ export default function SettingsPage() {
             setBrevo(limit)
             setLoadingBrevo(false)
         })
+        getDbSize().then((size) => {
+            setDbSize(size)
+            setLoadingDbSize(false)
+        })
     }, [])
 
     const handleEditStart = () => {
         setEditName(account?.displayName || '')
-        setEditUsername(account?.username || '')
         setEditing(true)
     }
 
     const handleEditCancel = () => {
         setEditing(false)
         setEditName('')
-        setEditUsername('')
     }
 
     const handleEditSave = async () => {
         if (!editName.trim()) return
         setSaving(true)
-        const success = await updateDisplayName(editName.trim(), editUsername.trim())
+        const success = await updateDisplayName(editName.trim())
         if (success && account) {
-            setAccount({ ...account, displayName: editName.trim(), username: editUsername.trim() || null })
+            setAccount({ ...account, displayName: editName.trim() })
         }
         setSaving(false)
         setEditing(false)
     }
 
     const displayName = account?.displayName
-    const username = account?.username
     const needsSetup = !displayName
 
     return (
@@ -152,50 +156,6 @@ export default function SettingsPage() {
                                     )}
                                 </div>
 
-                                {/* Username */}
-                                <div>
-                                    <p className="text-xs text-gray-400 mb-1">Username</p>
-                                    {editing ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="text"
-                                                value={editUsername}
-                                                onChange={(e) => setEditUsername(e.target.value)}
-                                                placeholder="Enter your username"
-                                                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
-                                            />
-                                            <button
-                                                onClick={handleEditSave}
-                                                disabled={saving || !editName.trim()}
-                                                className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition disabled:opacity-40"
-                                                title="Save"
-                                            >
-                                                <Check className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={handleEditCancel}
-                                                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition"
-                                                title="Cancel"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-base font-semibold text-gray-900">
-                                                {username || <span className="text-gray-300 italic font-normal">Not set</span>}
-                                            </p>
-                                            <button
-                                                onClick={handleEditStart}
-                                                className="p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition"
-                                                title="Edit username"
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
                                 {/* Email */}
                                 <div>
                                     <p className="text-xs text-gray-400 mb-1">Email</p>
@@ -255,6 +215,55 @@ export default function SettingsPage() {
                         </div>
                     ) : (
                         <p className="text-sm text-gray-400">Unable to load Brevo account info.</p>
+                    )}
+                </div>
+            </div>
+
+            {/* ═══ Database Size (Supabase) ═══ */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
+                    <Database className="w-5 h-5 text-gray-700" />
+                    <h3 className="text-lg font-bold text-gray-900">Database Size</h3>
+                    <span className="ml-auto text-xs text-gray-400">via Supabase</span>
+                </div>
+
+                <div className="px-6 py-6">
+                    {loadingDbSize ? (
+                        <div className="flex items-center gap-3 py-4">
+                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm text-gray-400">Loading database size…</span>
+                        </div>
+                    ) : dbSize ? (
+                        <div className="flex flex-wrap items-end gap-8">
+                            {/* Human-readable size */}
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">Current Size</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {dbSize.pretty}
+                                </p>
+                            </div>
+
+                            {/* Free tier indicator — Supabase free tier is 500 MB */}
+                            <div className="mb-0.5 flex-1 min-w-48">
+                                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                    <span>Free tier usage</span>
+                                    <span>{((dbSize.bytes / (500 * 1024 * 1024)) * 100).toFixed(1)}% of 500 MB</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                    <div
+                                        className={`h-1.5 rounded-full transition-all ${dbSize.bytes / (500 * 1024 * 1024) > 0.8
+                                            ? 'bg-red-500'
+                                            : dbSize.bytes / (500 * 1024 * 1024) > 0.6
+                                                ? 'bg-amber-400'
+                                                : 'bg-green-500'
+                                            }`}
+                                        style={{ width: `${Math.min((dbSize.bytes / (500 * 1024 * 1024)) * 100, 100)}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-400">Unable to load database size.</p>
                     )}
                 </div>
             </div>

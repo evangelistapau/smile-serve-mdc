@@ -5,7 +5,6 @@ import { supabase } from './client'
 export interface AccountInfo {
     email: string
     displayName: string | null
-    username: string | null
 }
 
 export interface LoginHistoryEntry {
@@ -52,20 +51,19 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
     // Fetch display_name from profiles table
     const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, username')
+        .select('display_name')
         .eq('id', user.id)
         .single()
 
     return {
         email: user.email || '',
         displayName: profile?.display_name || null,
-        username: profile?.username || null,
     }
 }
 
 // ─── Update Profile ─────────────────────────────────────────
 
-export async function updateDisplayName(displayName: string, username: string): Promise<boolean> {
+export async function updateDisplayName(displayName: string): Promise<boolean> {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -77,8 +75,7 @@ export async function updateDisplayName(displayName: string, username: string): 
         .from('profiles')
         .upsert({
             id: user.id,
-            display_name: displayName,
-            username: username,
+            display_name: displayName
         })
 
     if (error) {
@@ -154,6 +151,22 @@ export async function getBrevoEmailLimit(): Promise<BrevoEmailLimit | null> {
         const res = await fetch('/api/brevo/limit')
         if (!res.ok) return null
         return await res.json()
+    } catch {
+        return null
+    }
+}
+
+// ─── Supabase DB Size ─────────────────────────────────────────
+export interface DbSizeInfo {
+    bytes: number
+    pretty: string  // e.g. "47 MB"
+}
+
+export async function getDbSize(): Promise<DbSizeInfo | null> {
+    try {
+        const { data, error } = await supabase.rpc('get_db_size')
+        if (error || !data) return null
+        return data as DbSizeInfo
     } catch {
         return null
     }
