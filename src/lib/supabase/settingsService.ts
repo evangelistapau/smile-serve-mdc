@@ -142,3 +142,19 @@ export async function getLoginHistory(limit = 20): Promise<LoginHistoryEntry[]> 
     }))
 }
 
+// ─── Brevo ───────────────────────────────────────────────────
+
+export interface BrevoEmailLimit {
+    planType: string
+    credits: number | null
+}
+
+export async function getBrevoEmailLimit(): Promise<BrevoEmailLimit | null> {
+    try {
+        const res = await fetch('/api/brevo/limit')
+        if (!res.ok) return null
+        return await res.json()
+    } catch {
+        return null
+    }
+}

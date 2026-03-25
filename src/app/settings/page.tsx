@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, Lock, Pencil, Check, X, History } from 'lucide-react'
+import { User, Lock, Pencil, Check, X, History, Mail } from 'lucide-react'
 import {
     getAccountInfo,
     updateDisplayName,
     getLoginHistory,
+    getBrevoEmailLimit,
     AccountInfo,
     LoginHistoryEntry,
+    BrevoEmailLimit,
 } from '@/lib/supabase/settingsService'
 
 // ═════════════════════════════════════════════════════════════
@@ -21,6 +23,8 @@ export default function SettingsPage() {
     const [loadingAccount, setLoadingAccount] = useState(true)
     const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([])
     const [loadingHistory, setLoadingHistory] = useState(true)
+    const [brevo, setBrevo] = useState<BrevoEmailLimit | null>(null)
+    const [loadingBrevo, setLoadingBrevo] = useState(true)
 
     // Edit state
     const [editing, setEditing] = useState(false)
@@ -36,6 +40,10 @@ export default function SettingsPage() {
         getLoginHistory().then((entries) => {
             setLoginHistory(entries)
             setLoadingHistory(false)
+        })
+        getBrevoEmailLimit().then((limit) => {
+            setBrevo(limit)
+            setLoadingBrevo(false)
         })
     }, [])
 
@@ -205,6 +213,48 @@ export default function SettingsPage() {
                         </>
                     ) : (
                         <p className="text-sm text-gray-400">Unable to load account information.</p>
+                    )}
+                </div>
+            </div>
+
+            {/* ═══ Email Sending Limit (Brevo) ═══ */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
+                    <Mail className="w-5 h-5 text-gray-700" />
+                    <h3 className="text-lg font-bold text-gray-900">Email Sending Limit</h3>
+                    <span className="ml-auto text-xs text-gray-400">via Brevo</span>
+                </div>
+
+                <div className="px-6 py-6">
+                    {loadingBrevo ? (
+                        <div className="flex items-center gap-3 py-4">
+                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm text-gray-400">Loading sending limit…</span>
+                        </div>
+                    ) : brevo ? (
+                        <div className="flex flex-wrap items-center gap-8">
+                            {/* Credits */}
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">Send Limit</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {brevo.credits === null ? '∞' : brevo.credits.toLocaleString()}
+                                    <span className="text-sm font-normal text-gray-400 ml-1">emails / day</span>
+                                </p>
+                            </div>
+
+                            {/* Plan badge */}
+                            <div>
+                                <p className="text-xs text-gray-400 mb-1">Plan</p>
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize border
+                                    ${brevo.planType === 'free'
+                                        ? 'bg-gray-50 text-gray-600 border-gray-200'
+                                        : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                    {brevo.planType}
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-400">Unable to load Brevo account info.</p>
                     )}
                 </div>
             </div>
