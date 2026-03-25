@@ -433,8 +433,14 @@ function BookingFormModal({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setSubmitting(true)
         setError(null)
+
+        if (!/^09\d{9}$/.test(phone)) {
+            setError('Phone number format is incorrect. It should be 11 digits starting with 09 (e.g. 09151234567).')
+            return
+        }
+
+        setSubmitting(true)
 
         try {
             await createAppointment({
@@ -520,7 +526,17 @@ function BookingFormModal({
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-blue-600 mb-1.5">Phone Number</label>
-                            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" required className={inputClass} />
+                            <input 
+                                type="tel" 
+                                value={phone} 
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '')
+                                    if (val.length <= 11) setPhone(val)
+                                }} 
+                                placeholder="09151234567" 
+                                required 
+                                className={inputClass} 
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-blue-600 mb-1.5">
