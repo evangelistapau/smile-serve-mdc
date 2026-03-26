@@ -38,7 +38,7 @@ function parseUserAgent(ua: string): string {
     return `${browser} on ${os}`
 }
 
-// ─── Account Info (from auth + profiles table) ──────────────
+// ─── Account Info (from auth) ──────────────
 
 export async function getAccountInfo(): Promise<AccountInfo | null> {
     const { data: { user }, error } = await supabase.auth.getUser()
@@ -48,16 +48,9 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
         return null
     }
 
-    // Fetch display_name from profiles table
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .single()
-
     return {
         email: user.email || '',
-        displayName: profile?.display_name || null,
+        displayName: user.user_metadata?.display_name || null,
     }
 }
 
@@ -71,12 +64,9 @@ export async function updateDisplayName(displayName: string): Promise<boolean> {
         return false
     }
 
-    const { error } = await supabase
-        .from('profiles')
-        .upsert({
-            id: user.id,
-            display_name: displayName
-        })
+    const { error } = await supabase.auth.updateUser({
+        data: { display_name: displayName }
+    })
 
     if (error) {
         console.error('Error updating profile:', error.message)

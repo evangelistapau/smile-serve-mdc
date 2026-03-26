@@ -177,96 +177,101 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* ═══ Email Sending Limit (Brevo) ═══ */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-                    <Mail className="w-5 h-5 text-gray-700" />
-                    <h3 className="text-lg font-bold text-gray-900">Email Sending Limit</h3>
-                    <span className="ml-auto text-xs text-gray-400">via Brevo</span>
-                </div>
+            {/* ═══ Brevo + Supabase side by side ═══ */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <div className="px-6 py-6">
-                    {loadingBrevo ? (
-                        <div className="flex items-center gap-3 py-4">
-                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-gray-400">Loading sending limit…</span>
-                        </div>
-                    ) : brevo ? (
-                        <div className="flex flex-wrap items-center gap-8">
-                            {/* Credits */}
-                            <div>
-                                <p className="text-xs text-gray-400 mb-1">Send Limit</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {brevo.credits === null ? '∞' : brevo.credits.toLocaleString()}
-                                    <span className="text-sm font-normal text-gray-400 ml-1">emails / day</span>
-                                </p>
+                {/* ═══ Email Sending Limit (Brevo) ═══ */}
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
+                        <Mail className="w-5 h-5 text-gray-700" />
+                        <h3 className="text-lg font-bold text-gray-900">Email Sending Limit</h3>
+                        <span className="ml-auto text-xs text-gray-400">via Brevo</span>
+                    </div>
+
+                    <div className="px-6 py-6">
+                        {loadingBrevo ? (
+                            <div className="flex items-center gap-3 py-4">
+                                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-sm text-gray-400">Loading sending limit…</span>
                             </div>
-
-                            {/* Plan badge */}
-                            <div>
-                                <p className="text-xs text-gray-400 mb-1">Plan</p>
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize border
-                                    ${brevo.planType === 'free'
-                                        ? 'bg-gray-50 text-gray-600 border-gray-200'
-                                        : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                                    {brevo.planType}
-                                </span>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-sm text-gray-400">Unable to load Brevo account info.</p>
-                    )}
-                </div>
-            </div>
-
-            {/* ═══ Database Size (Supabase) ═══ */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-                    <Database className="w-5 h-5 text-gray-700" />
-                    <h3 className="text-lg font-bold text-gray-900">Database Size</h3>
-                    <span className="ml-auto text-xs text-gray-400">via Supabase</span>
-                </div>
-
-                <div className="px-6 py-6">
-                    {loadingDbSize ? (
-                        <div className="flex items-center gap-3 py-4">
-                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-gray-400">Loading database size…</span>
-                        </div>
-                    ) : dbSize ? (
-                        <div className="flex flex-wrap items-end gap-8">
-                            {/* Human-readable size */}
-                            <div>
-                                <p className="text-xs text-gray-400 mb-1">Current Size</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {dbSize.pretty}
-                                </p>
-                            </div>
-
-                            {/* Free tier indicator — Supabase free tier is 500 MB */}
-                            <div className="mb-0.5 flex-1 min-w-48">
-                                <div className="flex justify-between text-xs text-gray-400 mb-1">
-                                    <span>Free tier usage</span>
-                                    <span>{((dbSize.bytes / (500 * 1024 * 1024)) * 100).toFixed(1)}% of 500 MB</span>
+                        ) : brevo ? (
+                            <div className="flex flex-wrap items-center gap-8">
+                                {/* Credits */}
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Send Limit</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {brevo.credits === null ? '∞' : brevo.credits.toLocaleString()}
+                                        <span className="text-sm font-normal text-gray-400 ml-1">emails / day</span>
+                                    </p>
                                 </div>
-                                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div
-                                        className={`h-1.5 rounded-full transition-all ${dbSize.bytes / (500 * 1024 * 1024) > 0.8
-                                            ? 'bg-red-500'
-                                            : dbSize.bytes / (500 * 1024 * 1024) > 0.6
-                                                ? 'bg-amber-400'
-                                                : 'bg-green-500'
-                                            }`}
-                                        style={{ width: `${Math.min((dbSize.bytes / (500 * 1024 * 1024)) * 100, 100)}%` }}
-                                    />
+
+                                {/* Plan badge */}
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Plan</p>
+                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize border
+                                        ${brevo.planType === 'free'
+                                            ? 'bg-gray-50 text-gray-600 border-gray-200'
+                                            : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                        {brevo.planType}
+                                    </span>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                        <p className="text-sm text-gray-400">Unable to load database size.</p>
-                    )}
+                        ) : (
+                            <p className="text-sm text-gray-400">Unable to load Brevo account info.</p>
+                        )}
+                    </div>
                 </div>
-            </div>
+
+                {/* ═══ Database Size (Supabase) ═══ */}
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
+                        <Database className="w-5 h-5 text-gray-700" />
+                        <h3 className="text-lg font-bold text-gray-900">Database Size</h3>
+                        <span className="ml-auto text-xs text-gray-400">via Supabase</span>
+                    </div>
+
+                    <div className="px-6 py-6">
+                        {loadingDbSize ? (
+                            <div className="flex items-center gap-3 py-4">
+                                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-sm text-gray-400">Loading database size…</span>
+                            </div>
+                        ) : dbSize ? (
+                            <div className="flex flex-wrap items-end gap-8">
+                                {/* Human-readable size */}
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-1">Current Size</p>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                        {dbSize.pretty}
+                                    </p>
+                                </div>
+
+                                {/* Free tier indicator — Supabase free tier is 500 MB */}
+                                <div className="mb-0.5 flex-1 min-w-48">
+                                    <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                        <span>Free tier usage</span>
+                                        <span>{((dbSize.bytes / (500 * 1024 * 1024)) * 100).toFixed(1)}% of 500 MB</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                        <div
+                                            className={`h-1.5 rounded-full transition-all ${dbSize.bytes / (500 * 1024 * 1024) > 0.8
+                                                ? 'bg-red-500'
+                                                : dbSize.bytes / (500 * 1024 * 1024) > 0.6
+                                                    ? 'bg-amber-400'
+                                                    : 'bg-blue-500'
+                                                }`}
+                                            style={{ width: `${Math.min((dbSize.bytes / (500 * 1024 * 1024)) * 100, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-400">Unable to load database size.</p>
+                        )}
+                    </div>
+                </div>
+
+            </div>{/* end two-column grid */}
 
             {/* ═══ Login History ═══ */}
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
