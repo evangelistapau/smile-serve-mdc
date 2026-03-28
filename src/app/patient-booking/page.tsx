@@ -460,14 +460,14 @@ function BookingFormModal({
                 day: 'numeric',
                 year: 'numeric',
             })
-            sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
-                console.error('SMS send error (non-blocking):', err)
-            )
+            // sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
+            //     console.error('SMS send error (non-blocking):', err)
+            // )
 
-            // // Schedule reminder SMS 5 hours before appointment
-            sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
-                console.error('Reminder SMS scheduling error (non-blocking):', err)
-            )
+            // // // Schedule reminder SMS 5 hours before appointment
+            // sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
+            //     console.error('Reminder SMS scheduling error (non-blocking):', err)
+            // )
 
             // // Fire-and-forget email confirmation (only if email provided)
             if (email) {
@@ -528,16 +528,16 @@ function BookingFormModal({
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-blue-600 mb-1.5">Phone Number</label>
-                            <input 
-                                type="tel" 
-                                value={phone} 
+                            <input
+                                type="tel"
+                                value={phone}
                                 onChange={(e) => {
                                     const val = e.target.value.replace(/\D/g, '')
                                     if (val.length <= 11) setPhone(val)
-                                }} 
-                                placeholder="09151234567" 
-                                required 
-                                className={inputClass} 
+                                }}
+                                placeholder="09151234567"
+                                required
+                                className={inputClass}
                             />
                         </div>
                         <div>

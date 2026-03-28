@@ -23,7 +23,7 @@ const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Appointments', href: '/appointments', icon: CalendarDays },
     { label: 'Patients', href: '/patients', icon: Users },
-    { label: 'SMS Notifications', href: '/sms', icon: Bell },
+    { label: 'SMS Settings', href: '/sms', icon: Bell },
     { label: 'Account Settings', href: '/settings', icon: Sliders },
 ]
 

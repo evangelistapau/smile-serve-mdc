@@ -2,6 +2,14 @@ import { supabase } from './client'
 import { Appointment } from '@/types/appointment'
 import { toDisplayTime } from './appointmentService'
 
+/** Format a Date to YYYY-MM-DD using **local** timezone (matches how appointments are stored). */
+function toLocalDateStr(d: Date = new Date()): string {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
 export interface DashboardStats {
     totalPatients: number
     totalAppointments: number
@@ -18,7 +26,7 @@ export interface WeeklyActivity {
  * Get overall statistics for the dashboard.
  */
 export async function getDashboardStats(): Promise<DashboardStats> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateStr()
 
     const [patientsRes, appointmentsRes, todayRes] = await Promise.all([
         supabase.from('patient').select('*', { count: 'exact', head: true }),
@@ -37,7 +45,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
  * Get appointments for today.
  */
 export async function getTodayAppointments(): Promise<Appointment[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateStr()
     const { data, error } = await supabase
         .from('appointment')
         .select('*')
@@ -66,7 +74,7 @@ export async function getTodayAppointments(): Promise<Appointment[]> {
  * Limited to next 5 for the dashboard preview.
  */
 export async function getUpcomingAppointments(limit = 5): Promise<Appointment[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateStr()
     const { data, error } = await supabase
         .from('appointment')
         .select('*')
@@ -98,25 +106,25 @@ export async function getUpcomingAppointments(limit = 5): Promise<Appointment[]>
 export async function getWeeklyActivity(): Promise<WeeklyActivity[]> {
     const activity: WeeklyActivity[] = []
     const now = new Date()
-    
+
     // Get dates for the last 7 days
     for (let i = 6; i >= 0; i--) {
         const d = new Date()
         d.setDate(now.getDate() - i)
-        const dateStr = d.toISOString().split('T')[0]
+        const dateStr = toLocalDateStr(d)
         const dayName = d.toLocaleDateString('en-US', { weekday: 'short' })
-        
+
         const { count, error } = await supabase
             .from('appointment')
             .select('*', { count: 'exact', head: true })
             .eq('appointment_date', dateStr)
-            
+
         activity.push({
             date: dateStr,
             dayName: dayName,
             count: count || 0
         })
     }
-    
+
     return activity
 }

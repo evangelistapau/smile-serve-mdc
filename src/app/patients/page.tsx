@@ -5,7 +5,9 @@ import { Patient } from '@/types/patient'
 import { getPatients, createPatient, deletePatient } from '@/lib/supabase/patientService'
 import { Search, Plus, Eye, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import AddPatientModal from '@/components/AddPatientModal'
+import DeletePatientModal from '@/components/DeletePatientModal'
 
 export default function PatientsPage() {
     const router = useRouter()
@@ -16,9 +18,14 @@ export default function PatientsPage() {
     const [sortField, setSortField] = useState<'patient_id' | 'name' | 'last_visit'>('patient_id')
     const [sortAsc, setSortAsc] = useState(true)
 
-    // Modal state
+    // Add patient modal state
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+
+    // Delete modal state
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+    const [pendingDeleteName, setPendingDeleteName] = useState('')
+    const [deleting, setDeleting] = useState(false)
 
     useEffect(() => {
         fetchPatients()
@@ -55,17 +62,31 @@ export default function PatientsPage() {
         setSubmitting(false)
     }
 
-    const handleDelete = async (id?: string) => {
-        if (!id) return
-        const confirmed = window.confirm('Are you sure you want to delete this patient? This action cannot be undone.')
-        if (!confirmed) return
+    const handleDelete = (patient: Patient) => {
+        if (!patient.id) return
+        setPendingDeleteId(patient.id)
+        setPendingDeleteName(`${patient.first_name} ${patient.last_name}`)
+    }
 
-        const { error } = await deletePatient(id)
+    const handleConfirmDelete = async () => {
+        if (!pendingDeleteId) return
+        setDeleting(true)
+        const { error } = await deletePatient(pendingDeleteId)
+        setDeleting(false)
         if (error) {
-            setError(error)
+            toast.error('Failed to delete patient. Please try again.')
         } else {
+            toast.success('Patient deleted successfully.')
+            setPendingDeleteId(null)
+            setPendingDeleteName('')
             fetchPatients()
         }
+    }
+
+    const handleCloseDeleteModal = () => {
+        if (deleting) return
+        setPendingDeleteId(null)
+        setPendingDeleteName('')
     }
 
     const filteredPatients = patients.filter(
@@ -206,7 +227,7 @@ export default function PatientsPage() {
                                                     <Eye className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(patient.id)}
+                                                    onClick={() => handleDelete(patient)}
                                                     className="p-1.5 rounded hover:bg-red-50 text-red-600 hover:text-red-700 transition"
                                                     title="Delete"
                                                 >
@@ -228,6 +249,15 @@ export default function PatientsPage() {
                 onClose={closeModal}
                 onSubmit={handleSubmit}
                 submitting={submitting}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <DeletePatientModal
+                isOpen={!!pendingDeleteId}
+                patientName={pendingDeleteName}
+                onConfirm={handleConfirmDelete}
+                onClose={handleCloseDeleteModal}
+                deleting={deleting}
             />
         </div>
     )

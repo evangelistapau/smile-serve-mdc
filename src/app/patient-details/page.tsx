@@ -12,6 +12,8 @@ import {
     deletePatientHistory
 } from '@/lib/supabase/patientHistoryService'
 import { ArrowLeft, Pencil, Trash2, Save, X, Plus, ChevronDown } from 'lucide-react'
+import { toast } from 'sonner'
+import DeletePatientModal from '@/components/DeletePatientModal'
 
 export default function PatientDetailsPage() {
     const router = useRouter()
@@ -25,6 +27,10 @@ export default function PatientDetailsPage() {
     // Edit mode state
     const [isEditing, setIsEditing] = useState(false)
     const [saving, setSaving] = useState(false)
+
+    // Delete modal state
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleting, setDeleting] = useState(false)
     const [editData, setEditData] = useState({
         first_name: '',
         middle_name: '',
@@ -146,15 +152,21 @@ export default function PatientDetailsPage() {
         }
     }
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (!patient?.id) return
-        const confirmed = window.confirm('Are you sure you want to delete this patient? This action cannot be undone.')
-        if (!confirmed) return
+        setShowDeleteModal(true)
+    }
 
+    const handleConfirmDelete = async () => {
+        if (!patient?.id) return
+        setDeleting(true)
         const { error } = await deletePatient(patient.id)
+        setDeleting(false)
         if (error) {
-            setError(error)
+            toast.error('Failed to delete patient. Please try again.')
         } else {
+            toast.success('Patient deleted successfully.')
+            setShowDeleteModal(false)
             router.push('/patients')
         }
     }
@@ -675,6 +687,15 @@ export default function PatientDetailsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Delete Patient Modal */}
+            <DeletePatientModal
+                isOpen={showDeleteModal}
+                patientName={`${patient?.first_name ?? ''} ${patient?.last_name ?? ''}`}
+                onConfirm={handleConfirmDelete}
+                onClose={() => { if (!deleting) setShowDeleteModal(false) }}
+                deleting={deleting}
+            />
         </div>
     )
 }

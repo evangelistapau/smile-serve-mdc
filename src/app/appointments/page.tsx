@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, X, Settings, Lock, Unlock, ExternalLink, Clock, User } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, Settings, Lock, Unlock, ExternalLink, Clock, User, Phone } from 'lucide-react'
 import {
     getAppointmentsForDate,
     getAppointmentsForDateRange,
@@ -472,6 +472,12 @@ function CalendarView({
                                     <Clock className="w-3.5 h-3.5" />
                                     {appt.appointment_time}
                                 </div>
+                                {appt.phone_number && (
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                        <Phone className="w-3.5 h-3.5" />
+                                        {appt.phone_number}
+                                    </div>
+                                )}
                                 {appt.purpose && (
                                     <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                         <User className="w-3.5 h-3.5" />
@@ -559,7 +565,12 @@ function DayView({
                                         <div className="bg-blue-50 border border-blue-100 rounded-md px-3 py-1.5 flex items-center justify-between">
                                             <div>
                                                 <p className="text-sm font-semibold text-gray-900 leading-tight">{appt.patient_name}</p>
-                                                <p className="text-[11px] text-blue-500 mt-0.5"> {appt.purpose || 'Appointment'}</p>
+                                                {appt.phone_number && (
+                                                    <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                                                        <Phone className="w-3 h-3" />{appt.phone_number}
+                                                    </p>
+                                                )}
+                                                <p className="text-[11px] text-blue-500 mt-0.5">{appt.purpose || 'Appointment'}</p>
                                             </div>
                                             <button
                                                 onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
@@ -659,6 +670,11 @@ function WeekView({
                                         ) : appt ? (
                                             <div className="bg-blue-50 border border-blue-100 rounded-md px-2 py-1.5 relative group">
                                                 <p className="text-sm font-semibold text-gray-900 leading-tight truncate">{appt.patient_name}</p>
+                                                {appt.phone_number && (
+                                                    <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1 truncate">
+                                                        <Phone className="w-3 h-3 flex-shrink-0" />{appt.phone_number}
+                                                    </p>
+                                                )}
                                                 <p className="text-[11px] text-blue-500 mt-0.5 truncate">{appt.purpose || 'Appointment'}</p>
                                                 <button
                                                     onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
