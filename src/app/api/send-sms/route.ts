@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    // ─── Booking Reminder (scheduled 5 hours before appointment) ──
+    // ─── Booking Reminder (scheduled 2 hours before appointment) ──
     if (body.type === "booking_reminder") {
         const { patientName, patientPhone, appointmentDate, appointmentTime, appointmentDateISO } = body;
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
             .replace(/{appointment_date}/g, appointmentDate)
             .replace(/{appointment_time}/g, appointmentTime);
 
-        // Compute send_at = appointment datetime − 5 hours (Philippine +08:00)
+        // Compute send_at = appointment datetime − 2 hours (Philippine +08:00)
         const sendAt = computeReminderTime(appointmentDateISO, appointmentTime);
         console.log("Scheduling reminder SMS at:", sendAt);
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Compute the ISO 8601 send_at time = appointment datetime − 5 hours.
+ * Compute the ISO 8601 send_at time = appointment datetime − 2 hours.
  * appointmentDate: "2026-03-15"  appointmentTime: "10:00 AM"
  * Returns e.g. "2026-03-15T05:00:00+08:00"
  */
@@ -101,7 +101,7 @@ function computeReminderTime(appointmentDate: string, appointmentTime: string): 
     // Build a Date in Philippine timezone (+08:00)
     const isoString = `${appointmentDate}T${String(hour24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00+08:00`;
     const appointmentMs = new Date(isoString).getTime();
-    const reminderMs = appointmentMs - 5 * 60 * 60 * 1000; // minus 5 hours
+    const reminderMs = appointmentMs - 2 * 60 * 60 * 1000; // minus 2 hours
 
     // Format back to ISO 8601 with +08:00 offset
     const d = new Date(reminderMs)

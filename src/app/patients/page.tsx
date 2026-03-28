@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { Patient } from '@/types/patient'
 import { getPatients, createPatient, deletePatient } from '@/lib/supabase/patientService'
 import { Search, Plus, Eye, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import AddPatientModal from '@/components/AddPatientModal'
 import DeletePatientModal from '@/components/DeletePatientModal'
 
 export default function PatientsPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [patients, setPatients] = useState<Patient[]>([])
     const [patientsLoading, setPatientsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -18,8 +19,8 @@ export default function PatientsPage() {
     const [sortField, setSortField] = useState<'patient_id' | 'name' | 'last_visit'>('patient_id')
     const [sortAsc, setSortAsc] = useState(true)
 
-    // Add patient modal state
-    const [isModalOpen, setIsModalOpen] = useState(false)
+    // Add patient modal state — auto-open if ?action=add
+    const [isModalOpen, setIsModalOpen] = useState(() => searchParams.get('action') === 'add')
     const [submitting, setSubmitting] = useState(false)
 
     // Delete modal state

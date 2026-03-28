@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS: SmsSettings = {
     confirmedBookingMessage:
         'Good day {patient_name}, your appointment at Modern Dentistry Clinic is confirmed for {appointment_date} at {appointment_time}. If you need to reschedule, please call or text at least 1 day in advance, or 2 hours before your appointment. Thank you and keep safe!',
     reminderMessage:
-        'Hi {patient_name}, reminder: your appointment at {appointment_time} today is in 5 hours. See you soon!',
+        'Hi {patient_name}, reminder: your appointment at {appointment_time} today is in 2 hours. See you soon!',
 }
 
 // ─── Get SMS Settings ────────────────────────────────────────

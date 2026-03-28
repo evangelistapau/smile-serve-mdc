@@ -92,6 +92,7 @@ export default function AppointmentsPage() {
     const [weekAppointments, setWeekAppointments] = useState<Appointment[]>([])
     const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([])
     const [weekUnavailable, setWeekUnavailable] = useState<UnavailableSlot[]>([])
+    const [monthUnavailable, setMonthUnavailable] = useState<UnavailableSlot[]>([])
     const [loading, setLoading] = useState(false)
 
     // Modal
@@ -114,12 +115,13 @@ export default function AppointmentsPage() {
 
     useEffect(() => { loadDayData() }, [loadDayData])
 
-    // ─── Fetch month appointments (for calendar badges) ─────
+    // ─── Fetch month appointments + unavailable days ────────
     const loadMonthData = useCallback(() => {
         const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
         const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
         const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
         getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
+        getUnavailableSlotsForRange(startDate, endDate).then(setMonthUnavailable)
     }, [calYear, calMonth])
 
     useEffect(() => { loadMonthData() }, [loadMonthData])
@@ -215,6 +217,12 @@ export default function AppointmentsPage() {
         bookingCounts[a.appointment_date] = (bookingCounts[a.appointment_date] || 0) + 1
     })
 
+    // ─── Fully-unavailable days set (for calendar coloring) ─
+    const unavailableDays = new Set<string>()
+    monthUnavailable.forEach((s) => {
+        if (s.time_slot === null) unavailableDays.add(s.date)
+    })
+
     // ─── Unavailable flags ───────────────────────────────────
     const isDayUnavailable = unavailableSlots.some((s) => s.time_slot === null)
     const unavailableTimeSlots = new Set(
@@ -222,18 +230,29 @@ export default function AppointmentsPage() {
     )
 
     return (
-        <div className="space-y-0">
+        <div className="h-full flex flex-col overflow-hidden">
 
             {/* ═══ Toolbar ═══ */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-5">
-                {/* View toggle + Book Appointment */}
-                <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 flex flex-wrap gap-3 items-center justify-between mb-4">
+                {/* LEFT: Navigation */}
+                <div className="flex items-center gap-2">
+                    <button onClick={handlePrev} className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition text-gray-600">
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-semibold text-gray-700 min-w-[140px] text-center px-1">{headerLabel}</span>
+                    <button onClick={handleNext} className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition text-gray-600">
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* RIGHT: View toggle + Book Appointment */}
+                <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex border border-gray-200 rounded-lg overflow-hidden">
                         {(['calendar', 'day', 'week'] as ViewMode[]).map((mode) => (
                             <button
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
-                                className={`px-4 py-2 text-sm font-medium transition ${viewMode === mode
+                                className={`px-3 py-2 text-xs sm:text-sm font-medium transition ${viewMode === mode
                                     ? 'bg-blue-500 text-white'
                                     : 'bg-white text-gray-600 hover:bg-gray-50'
                                     }`}
@@ -242,80 +261,70 @@ export default function AppointmentsPage() {
                             </button>
                         ))}
                     </div>
-
                     <a
                         href="/patient-booking"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-400 text-white text-sm font-medium rounded-lg hover:bg-blue-500 active:scale-[0.97] transition shadow-sm"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-400 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-500 active:scale-[0.97] transition shadow-sm"
                     >
-                        Book Appointment
+                        <span className="hidden sm:inline">Book Appointment</span>
+                        <span className="sm:hidden">Book</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                 </div>
-
-                {/* Navigation */}
-                <div className="flex items-center gap-3">
-                    <button onClick={handlePrev} className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-500">
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <span className="text-sm font-semibold text-gray-700 min-w-[160px] text-center">{headerLabel}</span>
-                    <button onClick={handleNext} className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-500">
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-                </div>
-
-
             </div>
 
-            {/* ═══ Views ═══ */}
-            {viewMode === 'calendar' && (
-                <CalendarView
-                    calYear={calYear}
-                    calMonth={calMonth}
-                    selectedDate={selectedDate}
-                    bookingCounts={bookingCounts}
-                    dayAppointments={dayAppointments}
-                    isDayUnavailable={isDayUnavailable}
-                    unavailableTimeSlots={unavailableTimeSlots}
-                    loading={loading}
-                    onDateChange={(d) => {
-                        setSelectedDate(d)
-                        setCalMonth(d.getMonth())
-                        setCalYear(d.getFullYear())
-                    }}
-                    onCustomize={() => setShowAvailabilityModal(true)}
-                    onDeleteAppointment={setAppointmentToDelete}
-                />
-            )}
+            {/* ═══ Views — fills remaining height ═══ */}
+            <div className="flex-1 min-h-0">
+                {viewMode === 'calendar' && (
+                    <CalendarView
+                        calYear={calYear}
+                        calMonth={calMonth}
+                        selectedDate={selectedDate}
+                        bookingCounts={bookingCounts}
+                        unavailableDays={unavailableDays}
+                        dayAppointments={dayAppointments}
+                        isDayUnavailable={isDayUnavailable}
+                        unavailableTimeSlots={unavailableTimeSlots}
+                        loading={loading}
+                        onDateChange={(d) => {
+                            setSelectedDate(d)
+                            setCalMonth(d.getMonth())
+                            setCalYear(d.getFullYear())
+                        }}
+                        onCustomize={() => setShowAvailabilityModal(true)}
+                        onDeleteAppointment={setAppointmentToDelete}
+                    />
+                )}
 
-            {viewMode === 'day' && (
-                <DayView
-                    selectedDate={selectedDate}
-                    appointments={dayAppointments}
-                    isDayUnavailable={isDayUnavailable}
-                    unavailableTimeSlots={unavailableTimeSlots}
-                    loading={loading}
-                    onMakeDayUnavailable={async () => {
-                        if (isDayUnavailable) {
-                            await removeSlotUnavailable(dateStr)
-                        } else {
-                            await setSlotUnavailable(dateStr)
-                        }
-                        loadDayData()
-                    }}
-                    onDeleteAppointment={setAppointmentToDelete}
-                />
-            )}
+                {viewMode === 'day' && (
+                    <DayView
+                        selectedDate={selectedDate}
+                        appointments={dayAppointments}
+                        isDayUnavailable={isDayUnavailable}
+                        unavailableTimeSlots={unavailableTimeSlots}
+                        loading={loading}
+                        onMakeDayUnavailable={async () => {
+                            if (isDayUnavailable) {
+                                await removeSlotUnavailable(dateStr)
+                            } else {
+                                await setSlotUnavailable(dateStr)
+                            }
+                            loadDayData()
+                        }}
+                        onDeleteAppointment={setAppointmentToDelete}
+                    />
+                )}
 
-            {viewMode === 'week' && (
-                <WeekView
-                    selectedDate={selectedDate}
-                    appointments={weekAppointments}
-                    unavailableSlots={weekUnavailable}
-                    onDeleteAppointment={setAppointmentToDelete}
-                />
-            )}
+                {viewMode === 'week' && (
+                    <WeekView
+                        selectedDate={selectedDate}
+                        appointments={weekAppointments}
+                        unavailableSlots={weekUnavailable}
+                        onDeleteAppointment={setAppointmentToDelete}
+                    />
+                )}
+            </div>
 
             {/* ═══ Availability Modal ═══ */}
             {showAvailabilityModal && (
@@ -349,6 +358,7 @@ function CalendarView({
     calMonth,
     selectedDate,
     bookingCounts,
+    unavailableDays,
     dayAppointments,
     isDayUnavailable,
     unavailableTimeSlots,
@@ -361,6 +371,7 @@ function CalendarView({
     calMonth: number
     selectedDate: Date
     bookingCounts: Record<string, number>
+    unavailableDays: Set<string>
     dayAppointments: Appointment[]
     isDayUnavailable: boolean
     unavailableTimeSlots: Set<string>
@@ -389,23 +400,36 @@ function CalendarView({
     })
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 min-h-0">
             {/* Calendar Grid */}
-            <div className="lg:col-span-2">
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden p-4 md:p-6">
-                    <div className="grid grid-cols-7 gap-2 mb-2">
+            <div className="lg:col-span-2 min-h-0 flex flex-col">
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden p-3 sm:p-4 md:p-5 flex flex-col flex-1 min-h-0">
+                    {/* Legend — top */}
+                    <div className="flex items-center gap-4 mb-2 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <div className="w-2.5 h-2.5 rounded bg-blue-600" />
+                            <span>Selected</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <div className="w-2.5 h-2.5 rounded bg-red-50 border border-red-200" />
+                            <span>Marked Unavailable</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-0.5 mb-1 flex-shrink-0">
                         {DAY_LABELS.map((d) => (
-                            <div key={d} className="text-center text-sm font-medium text-gray-400 py-2">{d}</div>
+                            <div key={d} className="text-center text-[12px] font-medium text-gray-400 py-0.5">{d}</div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 md:gap-2">
+                    <div className="grid grid-cols-7 gap-0.5 flex-1 overflow-y-auto">
                         {cells.map((date, i) => {
-                            if (!date) return <div key={`e-${i}`} className="aspect-square bg-gray-50/50 rounded-lg" />
+                            if (!date) return <div key={`e-${i}`} className="aspect-square bg-gray-50/50 rounded" />
 
                             const ds = toDateStr(date)
                             const isSelected = isSameDay(date, selectedDate)
                             const isToday = isSameDay(date, todayStart)
+                            const isUnavailable = unavailableDays.has(ds)
                             const count = bookingCounts[ds] || 0
 
                             return (
@@ -413,17 +437,21 @@ function CalendarView({
                                     key={ds}
                                     onClick={() => onDateChange(date)}
                                     className={`
-                                        aspect-square flex flex-col items-center justify-center rounded-lg p-1 md:p-2 text-sm transition-colors
+                                        aspect-square flex flex-col items-center justify-center rounded text-xs transition-colors
                                         ${isSelected
-                                            ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-1'
-                                            : 'bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer'}
+                                            ? 'bg-blue-600 text-white shadow ring-1 ring-blue-600 ring-offset-1'
+                                            : isUnavailable
+                                                ? 'bg-red-50 border border-red-200 text-red-400 cursor-pointer'
+                                                : 'bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer'}
                                     `}
                                 >
-                                    <div className={`font-medium ${isToday && !isSelected ? 'text-blue-600' : ''}`}>{date.getDate()}</div>
+                                    <div
+                                        className={`text-md md:text-lg font-semibold leading-none ${isToday && !isSelected ? 'text-blue-600' : ''
+                                            }`}
+                                    >{date.getDate()}</div>
                                     {count > 0 && (
-                                        <div className={`text-[10px] sm:text-xs mt-0.5 md:mt-1 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
-                                            <span className="hidden sm:inline">{count} booking{count > 1 ? 's' : ''}</span>
-                                            <span className="sm:hidden">{count}</span>
+                                        <div className={`text-[9px] mt-0.5 leading-none ${isSelected ? 'text-blue-100' : isUnavailable ? 'text-red-300' : 'text-gray-400'}`}>
+                                            {count} bookings
                                         </div>
                                     )}
                                 </button>
@@ -433,61 +461,66 @@ function CalendarView({
                 </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 self-start">
-                <h3 className="text-base font-bold text-gray-900 mb-4">{formattedSelectedDate}</h3>
+            {/* Sidebar — fixed height, appointment list scrolls */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col min-h-0">
+                <h3 className="text-sm font-bold text-gray-900 mb-3 flex-shrink-0">{formattedSelectedDate}</h3>
 
                 <button
                     onClick={onCustomize}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition mb-5"
+                    className="w-full flex-shrink-0 flex items-center justify-center gap-2 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition mb-3"
                 >
                     <Settings className="w-4 h-4" />
                     Customize Availability
                 </button>
 
-                {loading ? (
-                    <div className="flex items-center gap-2 py-4">
-                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-gray-400">Loading…</span>
-                    </div>
-                ) : isDayUnavailable ? (
-                    <p className="text-sm text-red-500 font-medium">Day marked unavailable</p>
-                ) : dayAppointments.length === 0 ? (
-                    <p className="text-sm text-gray-400">No appointments for this day.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {dayAppointments.map((appt) => (
-                            <div
-                                key={appt.appointment_id}
-                                className="border border-gray-200 rounded-lg p-3 bg-blue-50 relative group flex flex-col"
-                            >
-                                <button
-                                    onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
-                                    className="absolute top-2 right-2 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition opacity-0 group-hover:opacity-100 md:opacity-100"
+                {/* Scrollable appointment list */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                    {loading ? (
+                        <div className="flex items-center gap-2 py-4">
+                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-xs text-gray-400">Loading…</span>
+                        </div>
+                    ) : isDayUnavailable ? (
+                        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-3 text-center">
+                            <p className="text-sm text-red-500 font-medium">Day marked unavailable</p>
+                        </div>
+                    ) : dayAppointments.length === 0 ? (
+                        <p className="text-sm text-gray-400">No appointments for this day.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {dayAppointments.map((appt) => (
+                                <div
+                                    key={appt.appointment_id}
+                                    className="border border-gray-200 rounded-lg p-3 bg-blue-50 relative group"
                                 >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                                <div className="font-medium text-sm text-gray-900 pr-5">{appt.patient_name || 'Appointment'}</div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    {appt.appointment_time}
+                                    <button
+                                        onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
+                                        className="absolute top-2 right-2 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                    <div className="font-medium text-xs text-gray-900 pr-6 truncate">{appt.patient_name || 'Appointment'}</div>
+                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+                                        <Clock className="w-3 h-3 flex-shrink-0" />
+                                        {appt.appointment_time}
+                                    </div>
+                                    {appt.phone_number && (
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                            <Phone className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">{appt.phone_number}</span>
+                                        </div>
+                                    )}
+                                    {appt.purpose && (
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                            <User className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">{appt.purpose}</span>
+                                        </div>
+                                    )}
                                 </div>
-                                {appt.phone_number && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                        <Phone className="w-3.5 h-3.5" />
-                                        {appt.phone_number}
-                                    </div>
-                                )}
-                                {appt.purpose && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                        <User className="w-3.5 h-3.5" />
-                                        {appt.purpose}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
@@ -524,72 +557,76 @@ function DayView({
     appointments.forEach((a) => { apptByTime[a.appointment_time] = a })
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden pb-5">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <span className="text-base font-semibold text-gray-700">{dayLabel}</span>
+        <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+            {/* Fixed header */}
+            <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-100">
+                <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
                 <button
                     onClick={onMakeDayUnavailable}
-                    className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md transition ${isDayUnavailable ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${isDayUnavailable ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}
                 >
                     {isDayUnavailable ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                     {isDayUnavailable ? 'Make Day Available' : 'Make Day Unavailable'}
                 </button>
             </div>
 
-            {loading ? (
-                <div className="flex items-center gap-3 px-6 py-12 justify-center">
-                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm text-gray-400">Loading…</span>
-                </div>
-            ) : isDayUnavailable ? (
-                <div className="px-6 py-12 text-center">
-                    <p className="text-sm font-semibold text-red-500">This entire day is marked unavailable.</p>
-                </div>
-            ) : (
-                <div className="divide-y divide-gray-50 pt-4">
-                    {ALL_TIME_SLOTS.map((time) => {
-                        const appt = apptByTime[time]
-                        const isUnavailable = unavailableTimeSlots.has(time)
+            {/* Scrollable slot list */}
+            <div className="flex-1 overflow-y-auto">
+                {loading ? (
+                    <div className="flex items-center gap-3 px-6 py-12 justify-center">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm text-gray-400">Loading…</span>
+                    </div>
+                ) : isDayUnavailable ? (
+                    <div className="px-6 py-12 text-center">
+                        <p className="text-sm font-semibold text-red-500">This entire day is marked unavailable.</p>
+                    </div>
+                ) : (
+                    <div className="divide-y divide-gray-50 py-2">
+                        {ALL_TIME_SLOTS.map((time) => {
+                            const appt = apptByTime[time]
+                            const isUnavailable = unavailableTimeSlots.has(time)
 
-                        return (
-                            <div key={time} className="flex items-stretch">
-                                <div className="w-20 sm:w-24 md:w-28 flex-shrink-0 flex items-center justify-end pr-2 md:pr-4 py-2">
-                                    <span className="text-sm text-gray-500 font-medium whitespace-nowrap">{time}</span>
-                                </div>
-                                <div className="flex-1 py-1 pr-3 md:pr-4 overflow-hidden">
-                                    {isUnavailable ? (
-                                        <div className="bg-gray-100 rounded-md px-3 py-3 text-center h-full flex items-center justify-center">
-                                            <span className="text-sm text-gray-400 font-medium">Unavailable</span>
-                                        </div>
-                                    ) : appt ? (
-                                        <div className="bg-blue-50 border border-blue-100 rounded-md px-3 py-1.5 flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-900 leading-tight">{appt.patient_name}</p>
-                                                {appt.phone_number && (
-                                                    <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                                                        <Phone className="w-3 h-3" />{appt.phone_number}
-                                                    </p>
-                                                )}
-                                                <p className="text-[11px] text-blue-500 mt-0.5">{appt.purpose || 'Appointment'}</p>
+                            return (
+                                <div key={time} className="flex items-center">
+                                    <div className="w-20 sm:w-24 flex-shrink-0 flex items-center justify-end pr-3 py-2">
+                                        <span className="text-xs text-gray-400 font-medium whitespace-nowrap">{time}</span>
+                                    </div>
+                                    <div className="flex-1 py-1.5 pr-3 overflow-hidden">
+                                        {isUnavailable ? (
+                                            <div className="bg-gray-100 rounded-md px-3 py-4 flex items-center justify-center">
+                                                <span className="text-xs text-gray-400 font-medium">Unavailable</span>
                                             </div>
-                                            <button
-                                                onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
-                                                className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition"
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-green-50 border border-green-100 rounded-md px-3 py-3 text-center h-full flex items-center justify-center">
-                                            <span className="text-sm text-green-600 font-medium">Available</span>
-                                        </div>
-                                    )}
+                                        ) : appt ? (
+                                            <div className="bg-blue-50 border border-blue-100 rounded-md px-3 py-2 flex items-center justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-semibold text-gray-900 leading-tight truncate">{appt.patient_name}</p>
+                                                    {appt.phone_number && (
+                                                        <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1 truncate">
+                                                            <Phone className="w-2.5 h-2.5 flex-shrink-0" />{appt.phone_number}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-[10px] text-blue-500 mt-0.5 truncate italic">{appt.purpose || 'No Notes Added'}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
+                                                    className="flex-shrink-0 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-green-50 border border-green-100 rounded-md px-3 py-4 flex items-center justify-center">
+                                                <span className="text-xs text-green-600 font-medium">Available</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -627,23 +664,30 @@ function WeekView({
     })
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-auto pb-5">
-            <table className="w-full text-sm border-collapse">
+        <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-auto">
+            <table className="min-w-[600px] w-full text-sm border-collapse">
                 <thead>
                     <tr className="border-b border-gray-100">
-                        <th className="w-24 px-3 py-4 text-right text-xs font-medium text-gray-400" />
+                        <th className="w-20 sm:w-24 px-2 sm:px-3 py-4 text-right text-xs font-medium text-gray-400" />
                         {weekDates.map((d) => {
                             const ds = toDateStr(d)
                             const isToday = isSameDay(d, new Date())
+                            const isDayFull = unavailSet.has(`${ds}|full`)
                             return (
                                 <th
                                     key={ds}
-                                    className={`px-2 py-4 text-center ${isToday ? 'text-blue-600' : 'text-gray-600'}`}
+                                    className={`px-1 sm:px-2 py-3 text-center ${isDayFull
+                                        ? 'text-red-400 bg-red-50'
+                                        : isToday
+                                            ? 'text-blue-600'
+                                            : 'text-gray-600'
+                                        }`}
                                 >
-                                    <div className="text-xs font-semibold uppercase">{DAY_LABELS_SHORT[d.getDay()]}</div>
-                                    <div className={`text-lg font-bold mt-0.5 ${isToday ? 'text-blue-600' : 'text-gray-800'}`}>
+                                    <div className="text-[10px] sm:text-xs font-semibold uppercase">{DAY_LABELS_SHORT[d.getDay()]}</div>
+                                    <div className={`text-base sm:text-lg font-bold mt-0.5`}>
                                         {d.getDate()}
                                     </div>
+                                    {isDayFull && <div className="text-[8px] sm:text-[9px] font-medium text-red-400">Off</div>}
                                 </th>
                             )
                         })}
@@ -652,7 +696,7 @@ function WeekView({
                 <tbody>
                     {ALL_TIME_SLOTS.map((time) => (
                         <tr key={time} className="border-b border-gray-50">
-                            <td className="px-3 py-3 text-right text-xs font-medium text-gray-500 whitespace-nowrap">
+                            <td className="px-2 sm:px-3 py-0 text-right text-[10px] sm:text-xs font-medium text-gray-500 whitespace-nowrap">
                                 {time}
                             </td>
                             {weekDates.map((d) => {
@@ -662,32 +706,35 @@ function WeekView({
                                 const appt = apptMap[ds]?.[time]
 
                                 return (
-                                    <td key={ds} className="px-1.5 py-1.5">
-                                        {isDayFull || isSlotUnavail ? (
-                                            <div className="bg-gray-100 rounded-md px-2 py-3 text-center h-full flex items-center justify-center">
-                                                <span className="text-[11px] text-gray-400 font-medium">Unavailable</span>
-                                            </div>
-                                        ) : appt ? (
-                                            <div className="bg-blue-50 border border-blue-100 rounded-md px-2 py-1.5 relative group">
-                                                <p className="text-sm font-semibold text-gray-900 leading-tight truncate">{appt.patient_name}</p>
-                                                {appt.phone_number && (
-                                                    <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1 truncate">
-                                                        <Phone className="w-3 h-3 flex-shrink-0" />{appt.phone_number}
-                                                    </p>
-                                                )}
-                                                <p className="text-[11px] text-blue-500 mt-0.5 truncate">{appt.purpose || 'Appointment'}</p>
-                                                <button
-                                                    onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
-                                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center transition"
-                                                >
-                                                    <X className="w-2.5 h-2.5" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="bg-green-50 border border-green-100 rounded-md px-2 py-3 text-center h-full flex items-center justify-center">
-                                                <span className="text-[11px] text-green-600 font-medium">Available</span>
-                                            </div>
-                                        )}
+                                    <td key={ds} className="px-1 py-1">
+                                        {/* Fixed-height wrapper so all cells are uniform */}
+                                        <div className="h-[68px] relative">
+                                            {isDayFull || isSlotUnavail ? (
+                                                <div className="h-full bg-gray-100 rounded-md flex items-center justify-center">
+                                                    <span className="text-[10px] text-gray-400 font-medium">Unavailable</span>
+                                                </div>
+                                            ) : appt ? (
+                                                <div className="h-full bg-blue-50 border border-blue-100 rounded-md px-2 py-1.5 overflow-hidden relative group">
+                                                    <p className="text-xs font-semibold text-gray-900 leading-tight truncate pr-4">{appt.patient_name}</p>
+                                                    {appt.phone_number && (
+                                                        <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-0.5 truncate">
+                                                            <Phone className="w-2.5 h-2.5 flex-shrink-0" />{appt.phone_number}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-[10px] text-blue-500 mt-0.5 truncate italic">{appt.purpose || 'No notes added'}</p>
+                                                    <button
+                                                        onClick={() => appt.appointment_id && onDeleteAppointment(appt.appointment_id)}
+                                                        className="absolute top-1 right-1 w-4 h-4 bg-white border border-red-200 text-red-400 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition"
+                                                    >
+                                                        <X className="w-2.5 h-2.5" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="h-full bg-green-50 border border-green-100 rounded-md flex items-center justify-center">
+                                                    <span className="text-[10px] text-green-600 font-medium">Available</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                 )
                             })}

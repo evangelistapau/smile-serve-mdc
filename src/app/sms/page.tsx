@@ -150,7 +150,7 @@ export default function SmsSettingsPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Reminder Message (5 hours before)</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">Reminder Message (2 hours before)</label>
                             <textarea
                                 value={smsSettings.reminderMessage}
                                 onChange={(e) => handleSmsChange("reminderMessage", e.target.value)}

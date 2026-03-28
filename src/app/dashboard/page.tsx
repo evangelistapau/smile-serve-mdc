@@ -13,6 +13,7 @@ import { getAccountInfo } from '@/lib/supabase/settingsService'
 import {
     Users,
     CalendarDays,
+    CalendarCheck,
     ChevronRight,
     CalendarPlus,
     UserPlus,
@@ -122,14 +123,14 @@ export default function DashboardPage() {
     return (
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 md:h-full overflow-y-auto md:overflow-hidden">
             {/* ── Left Panel ── */}
-            <div className="xl:col-span-3 flex flex-col gap-5 md:overflow-y-auto md:pr-2">
+            <div className="xl:col-span-3 flex flex-col gap-3 md:overflow-y-auto md:pr-2">
 
                 {/* Greeting Section */}
                 <div className="flex-shrink-0">
-                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                    <h1 className="text-lg md:text-xl font-bold text-gray-900">
                         {getTimeGreeting()}, <span className="text-blue-600">Dr. {adminName}</span>
                     </h1>
-                    <p className="text-xs md:text-sm text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-400 mt-0.5">
                         Here&apos;s what&apos;s happening at your clinic today.
                     </p>
                 </div>
@@ -139,37 +140,39 @@ export default function DashboardPage() {
                     <Link href="/patients?action=add" className="flex-1">
                         <Button
                             variant="outline"
-                            className="w-full h-12 rounded-xl border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 hover:border-blue-300 text-blue-700 font-semibold transition-all"
+                            className="w-full h-10 rounded-xl border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 hover:border-blue-300 text-blue-700 font-semibold transition-all"
                         >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Add Patient
                         </Button>
                     </Link>
-                    <Link href="/appointments?action=add" className="flex-1">
+                    <Link href="/patient-booking"
+                        target="_blank"
+                        rel="noopener noreferrer" className="flex-1">
                         <Button
-                            className="w-full h-12 rounded-xl bg-blue-500 hover:bg-blue-700 text-white font-semibold transition-all"
+                            className="w-full h-10 rounded-xl bg-blue-500 hover:bg-blue-700 text-white font-semibold transition-all"
                         >
                             <CalendarPlus className="w-4 h-4 mr-2" />
-                            New Appointment
+                            Book for Walk-in
                         </Button>
                     </Link>
                 </div>
 
                 {/* Stat Cards */}
-                <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-3">
                     {/* Patients */}
                     <Link href="/patients">
                         <Card className="h-full hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30">
-                            <CardContent className="p-6 flex flex-col justify-between h-full">
+                            <CardContent className="p-4 flex flex-col justify-between h-full">
                                 <div className="flex items-start justify-between">
-                                    <p className="text-lg font-semibold text-gray-700 tracking-tight">Total Patients</p>
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                        <Users className="w-5 h-5 text-blue-600" />
+                                    <p className="text-sm font-semibold text-gray-700 tracking-tight">Total Patients</p>
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                        <Users className="w-4 h-4 text-blue-600" />
                                     </div>
                                 </div>
-                                <div className="mt-4">
-                                    <p className="text-5xl font-bold text-gray-900">{stats?.totalPatients || 0}</p>
-                                    <p className="text-xs text-blue-600 font-medium mt-2 flex items-center gap-0.5">
+                                <div className="mt-2">
+                                    <p className="text-4xl font-bold text-gray-900">{stats?.totalPatients || 0}</p>
+                                    <p className="text-xs text-blue-600 font-medium mt-1.5 flex items-center gap-0.5">
                                         View more details<ChevronRight className="w-3 h-3" />
                                     </p>
                                 </div>
@@ -177,19 +180,39 @@ export default function DashboardPage() {
                         </Card>
                     </Link>
 
-                    {/* Total Appointments Today */}
+                    {/* Today's Appointments */}
                     <Link href="/appointments?view=day">
                         <Card className="h-full hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30">
-                            <CardContent className="p-6 flex flex-col justify-between h-full">
+                            <CardContent className="p-4 flex flex-col justify-between h-full">
                                 <div className="flex items-start justify-between">
-                                    <p className="text-lg font-semibold text-gray-700 tracking-tight leading-tight">Today&apos;s Appointments</p>
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                        <CalendarDays className="w-5 h-5 text-blue-600" />
+                                    <p className="text-sm font-semibold text-gray-700 tracking-tight leading-tight">Today&apos;s Appointments</p>
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                        <CalendarDays className="w-4 h-4 text-blue-600" />
                                     </div>
                                 </div>
-                                <div className="mt-4">
-                                    <p className="text-5xl font-bold text-gray-900">{stats?.todayAppointmentsCount || 0}</p>
-                                    <p className="text-xs text-blue-600 font-medium mt-2 flex items-center gap-0.5">
+                                <div className="mt-2">
+                                    <p className="text-4xl font-bold text-gray-900">{stats?.todayAppointmentsCount || 0}</p>
+                                    <p className="text-xs text-blue-600 font-medium mt-1.5 flex items-center gap-0.5">
+                                        View more details <ChevronRight className="w-3 h-3" />
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+
+                    {/* Total Appointments */}
+                    <Link href="/appointments?view=calendar">
+                        <Card className="h-full hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30">
+                            <CardContent className="p-4 flex flex-col justify-between h-full">
+                                <div className="flex items-start justify-between">
+                                    <p className="text-sm font-semibold text-gray-700 tracking-tight leading-tight">Total Appointments</p>
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                        <CalendarCheck className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                </div>
+                                <div className="mt-2">
+                                    <p className="text-4xl font-bold text-gray-900">{stats?.totalAppointments || 0}</p>
+                                    <p className="text-xs text-blue-600 font-medium mt-1.5 flex items-center gap-0.5">
                                         View more details <ChevronRight className="w-3 h-3" />
                                     </p>
                                 </div>
@@ -199,22 +222,22 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Upcoming Week Summary */}
-                <Card className="flex-1 min-h-[240px] flex flex-col overflow-hidden border border-blue-100 bg-slate-50/50">
-                    <CardHeader className="flex-shrink-0 flex flex-row items-start justify-between pb-2 pt-5 px-6">
+                <Card className="flex-shrink-0 min-h-[180px] flex flex-col overflow-hidden border border-blue-100 bg-slate-50/50">
+                    <CardHeader className="flex-shrink-0 flex flex-row items-start justify-between pb-1 pt-3 px-5">
                         <div>
-                            <CardTitle className="text-lg font-semibold text-gray-800 tracking-tight">
+                            <CardTitle className="text-sm font-semibold text-gray-800 tracking-tight">
                                 Upcoming Week
                             </CardTitle>
                             <CardDescription className="text-xs text-gray-500 mt-0.5">
                                 {totalUpcoming} booking{totalUpcoming !== 1 ? 's' : ''} in the next 7 days
                             </CardDescription>
                         </div>
-                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                             <CalendarDays className="w-4 h-4 text-blue-600" />
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex-1 min-h-0 px-6 pb-5 pt-2">
+                    <CardContent className="flex-1 min-h-0 px-5 pb-4 pt-1">
                         <div className="h-full flex flex-col justify-end gap-2">
                             {/* Bars */}
                             <div className="flex-1 flex items-end gap-3">
