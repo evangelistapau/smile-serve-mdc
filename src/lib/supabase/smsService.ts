@@ -118,7 +118,7 @@ export async function getSmsLogs(limit = 50): Promise<SmsLog[]> {
     return data as SmsLog[]
 }
 
-// ─── Send Booking Reminder SMS (scheduled 5h before) ────────
+// ─── Send Booking Reminder SMS (scheduled 2h before) ────────
 
 export async function sendBookingReminderSms(
     patientName: string,
