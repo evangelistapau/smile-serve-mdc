@@ -51,6 +51,8 @@ export default function PatientDetailsPage() {
     const [historySubmitting, setHistorySubmitting] = useState(false)
     const [editingHistoryId, setEditingHistoryId] = useState<string | null>(null)
     const [historyForm, setHistoryForm] = useState({ date: '', service: '', customService: '', notes: '' })
+    const [historyToDelete, setHistoryToDelete] = useState<string | null>(null)
+    const [deletingHistory, setDeletingHistory] = useState(false)
 
     const DENTAL_SERVICES = [
         'Regular Checkup',
@@ -204,7 +206,6 @@ export default function PatientDetailsPage() {
         const resolvedService = historyForm.service === 'Other' ? historyForm.customService : historyForm.service
 
         if (editingHistoryId) {
-            // Update existing
             const { data, error } = await updatePatientHistory(editingHistoryId, {
                 date: historyForm.date,
                 service: resolvedService || undefined,
@@ -216,7 +217,6 @@ export default function PatientDetailsPage() {
                 setHistory(prev => prev.map(h => h.id === editingHistoryId ? data : h))
             }
         } else {
-            // Create new
             const { data, error } = await createPatientHistory({
                 patient_id: patient.id!,
                 date: historyForm.date,
@@ -228,7 +228,6 @@ export default function PatientDetailsPage() {
             } else if (data) {
                 const updatedHistory = [data, ...history]
                 setHistory(updatedHistory)
-                // Update local patient last_visit to the latest date across all history
                 const latestDate = updatedHistory
                     .map(h => h.date || '')
                     .filter(Boolean)
@@ -242,15 +241,21 @@ export default function PatientDetailsPage() {
         cancelHistoryForm()
     }
 
-    const handleDeleteHistory = async (historyId: string) => {
-        const confirmed = window.confirm('Delete this history entry?')
-        if (!confirmed) return
+    const handleDeleteHistory = (historyId: string) => {
+        setHistoryToDelete(historyId)
+    }
 
-        const { error } = await deletePatientHistory(historyId)
+    const executeDeleteHistory = async () => {
+        if (!historyToDelete) return
+        setDeletingHistory(true)
+        const { error } = await deletePatientHistory(historyToDelete)
+        setDeletingHistory(false)
         if (error) {
-            setError(error)
+            toast.error('Failed to delete history. Please try again.')
         } else {
-            setHistory(prev => prev.filter(h => h.id !== historyId))
+            toast.success('History deleted successfully.')
+            setHistory(prev => prev.filter(h => h.id !== historyToDelete))
+            setHistoryToDelete(null)
         }
     }
 
@@ -302,35 +307,36 @@ export default function PatientDetailsPage() {
             )}
 
             {/* Patient Details Card */}
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 sm:p-8">
                 {/* Header */}
-                <div className="mb-8">
+                <div className="mb-6 sm:mb-8">
                     {isEditing ? (
-                        <div className="flex gap-3">
+                        /* Stack name inputs vertically on mobile, row on sm+ */
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <input
                                 type="text"
                                 value={editData.first_name}
                                 onChange={(e) => setEditData({ ...editData, first_name: e.target.value })}
                                 placeholder="First name"
-                                className="text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none"
+                                className="text-xl sm:text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none min-w-0"
                             />
                             <input
                                 type="text"
                                 value={editData.middle_name}
                                 onChange={(e) => setEditData({ ...editData, middle_name: e.target.value })}
                                 placeholder="Middle name"
-                                className="text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none"
+                                className="text-xl sm:text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none min-w-0"
                             />
                             <input
                                 type="text"
                                 value={editData.last_name}
                                 onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
                                 placeholder="Last name"
-                                className="text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none"
+                                className="text-xl sm:text-2xl font-bold text-gray-900 border-b-2 border-blue-400 bg-transparent focus:outline-none min-w-0"
                             />
                         </div>
                     ) : (
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
                             {patient.first_name} {patient.middle_name ? patient.middle_name + ' ' : ''}{patient.last_name}
                         </h2>
                     )}
@@ -339,8 +345,8 @@ export default function PatientDetailsPage() {
                     </p>
                 </div>
 
-                {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-x-16 gap-y-6">
+                {/* Details Grid — 1 col on mobile, 2 cols on sm+ */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-5">
                     {/* Age */}
                     <div>
                         <p className="text-sm text-blue-500 mb-1">Age</p>
@@ -372,7 +378,7 @@ export default function PatientDetailsPage() {
                                 className={inputClass}
                             />
                         ) : (
-                            <p className="text-sm font-medium text-gray-900">{patient.phone || '—'}</p>
+                            <p className="text-sm font-medium text-gray-900 break-all">{patient.phone || '—'}</p>
                         )}
                     </div>
 
@@ -399,7 +405,7 @@ export default function PatientDetailsPage() {
                     </div>
 
                     {/* Email */}
-                    <div>
+                    <div className="min-w-0">
                         <p className="text-sm text-blue-500 mb-1">Email</p>
                         {isEditing ? (
                             <input
@@ -410,7 +416,7 @@ export default function PatientDetailsPage() {
                                 className={inputClass}
                             />
                         ) : (
-                            <p className="text-sm font-medium text-gray-900">{patient.email || '—'}</p>
+                            <p className="text-sm font-medium text-gray-900 break-all">{patient.email || '—'}</p>
                         )}
                     </div>
 
@@ -432,14 +438,13 @@ export default function PatientDetailsPage() {
                                 </select>
                                 <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
                             </div>
-
                         ) : (
                             <p className="text-sm font-medium text-gray-900">{patient.marital_status || '—'}</p>
                         )}
                     </div>
 
                     {/* Address */}
-                    <div>
+                    <div className="min-w-0">
                         <p className="text-sm text-blue-500 mb-1">Address</p>
                         {isEditing ? (
                             <input
@@ -450,12 +455,12 @@ export default function PatientDetailsPage() {
                                 className={inputClass}
                             />
                         ) : (
-                            <p className="text-sm font-medium text-gray-900">{patient.address || '—'}</p>
+                            <p className="text-sm font-medium text-gray-900 break-words">{patient.address || '—'}</p>
                         )}
                     </div>
 
                     {/* Occupation */}
-                    <div>
+                    <div className="min-w-0">
                         <p className="text-sm text-blue-500 mb-1">Occupation</p>
                         {isEditing ? (
                             <input
@@ -466,7 +471,7 @@ export default function PatientDetailsPage() {
                                 className={inputClass}
                             />
                         ) : (
-                            <p className="text-sm font-medium text-gray-900">{patient.occupation || '—'}</p>
+                            <p className="text-sm font-medium text-gray-900 break-words">{patient.occupation || '—'}</p>
                         )}
                     </div>
 
@@ -478,48 +483,51 @@ export default function PatientDetailsPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 mt-8">
+                <div className="flex flex-wrap gap-2 mt-6 sm:mt-8">
                     {isEditing ? (
                         <>
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className={`inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-                                    }`}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg transition ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
                             >
-                                <Save className="w-4 h-4" />
-                                {saving ? 'Saving...' : 'Save Changes'}
+                                <Save className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Changes'}</span>
+                                <span className="sm:hidden">{saving ? 'Saving...' : 'Save'}</span>
                             </button>
                             <button
                                 onClick={cancelEditing}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-3.5 h-3.5" />
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDelete}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition"
                             >
-                                <Trash2 className="w-4 h-4" />
-                                Delete Patient
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Delete Patient</span>
+                                <span className="sm:hidden">Delete</span>
                             </button>
                         </>
                     ) : (
                         <>
                             <button
                                 onClick={startEditing}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition"
                             >
-                                <Pencil className="w-4 h-4" />
-                                Edit Patient
+                                <Pencil className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Edit Patient</span>
+                                <span className="sm:hidden">Edit</span>
                             </button>
                             <button
                                 onClick={handleDelete}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-lg transition"
                             >
-                                <Trash2 className="w-4 h-4" />
-                                Delete Patient
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Delete Patient</span>
+                                <span className="sm:hidden">Delete</span>
                             </button>
                         </>
                     )}
@@ -527,36 +535,38 @@ export default function PatientDetailsPage() {
             </div>
 
             {/* ─── Patient History Card ─────────────────────────────────── */}
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 sm:p-8">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold text-gray-900">Patient History</h3>
+                <div className="flex justify-between items-center mb-6 gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Patient History</h3>
                         {history.length > 0 && (
                             <button
                                 onClick={() => setHistorySortAsc(!historySortAsc)}
-                                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full transition"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full transition"
                             >
-                                {historySortAsc ? '▲ Oldest First' : '▼ Latest First'}
+                                {historySortAsc ? '▲ Oldest' : '▼ Latest'}
                             </button>
                         )}
                     </div>
                     <button
                         onClick={openAddHistory}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition shrink-0"
                     >
-                        <Plus className="w-4 h-4" />
-                        Add History
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Add History</span>
+                        <span className="sm:hidden">Add</span>
                     </button>
                 </div>
 
                 {/* Add / Edit History Form */}
                 {showHistoryForm && (
-                    <div className="mb-6 p-5 bg-gray-50 border border-gray-200 rounded-lg space-y-4">
+                    <div className="mb-6 p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg space-y-4">
                         <h4 className="text-sm font-semibold text-gray-700">
                             {editingHistoryId ? 'Edit History Entry' : 'New History Entry'}
                         </h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* Stack on mobile, 2 cols on sm+ */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1">Date <span className="text-red-500">*</span></label>
                                 <input
@@ -597,35 +607,33 @@ export default function PatientDetailsPage() {
                                 />
                             </div>
                         )}
-                        <div className="grid grid-cols-1 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Notes <span className="text-red-500">*</span></label>
-                                <textarea
-                                    value={historyForm.notes}
-                                    onChange={(e) => setHistoryForm({ ...historyForm, notes: e.target.value })}
-                                    rows={3}
-                                    placeholder="Enter visit notes..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
-                                />
-                            </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Notes <span className="text-red-500">*</span></label>
+                            <textarea
+                                value={historyForm.notes}
+                                onChange={(e) => setHistoryForm({ ...historyForm, notes: e.target.value })}
+                                rows={3}
+                                placeholder="Enter visit notes..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
+                            />
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-2">
                             <button
                                 onClick={handleHistorySubmit}
                                 disabled={historySubmitting || !historyForm.date || !historyForm.service || (historyForm.service === 'Other' && !historyForm.customService) || !historyForm.notes}
-                                className={`inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition ${historySubmitting || !historyForm.date || !historyForm.service || (historyForm.service === 'Other' && !historyForm.customService) || !historyForm.notes
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-medium rounded-lg transition ${historySubmitting || !historyForm.date || !historyForm.service || (historyForm.service === 'Other' && !historyForm.customService) || !historyForm.notes
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-blue-500 hover:bg-blue-600'
                                     }`}
                             >
-                                <Save className="w-4 h-4" />
+                                <Save className="w-3.5 h-3.5" />
                                 {historySubmitting ? 'Saving...' : (editingHistoryId ? 'Update' : 'Save')}
                             </button>
                             <button
                                 onClick={cancelHistoryForm}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-3.5 h-3.5" />
                                 Cancel
                             </button>
                         </div>
@@ -648,24 +656,24 @@ export default function PatientDetailsPage() {
                             .map((h) => (
                                 <div
                                     key={h.id}
-                                    className="border border-gray-200 rounded-lg p-5 hover:border-blue-200 transition group"
+                                    className="border border-gray-200 rounded-lg p-4 sm:p-5 hover:border-blue-200 transition group"
                                 >
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-2">
+                                    <div className="flex justify-between items-start gap-3">
+                                        <div className="space-y-2 min-w-0 flex-1">
                                             {/* Date & Service */}
-                                            <div className="flex items-center gap-3">
-                                                <p className="text-sm font-semibold text-blue-500">{h.date || '—'}</p>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="text-sm font-semibold text-blue-500 shrink-0">{h.date || '—'}</p>
                                                 {h.service && (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 break-words">
                                                         {h.service}
                                                     </span>
                                                 )}
                                             </div>
                                             {/* Notes */}
-                                            <p className="text-sm text-gray-700">{h.notes || '—'}</p>
+                                            <p className="text-sm text-gray-700 break-words">{h.notes || '—'}</p>
                                         </div>
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                                        {/* Actions — always visible on mobile, hover on desktop */}
+                                        <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                                             <button
                                                 onClick={() => openEditHistory(h)}
                                                 className="p-1.5 text-gray-400 hover:text-blue-500 transition"
@@ -695,6 +703,16 @@ export default function PatientDetailsPage() {
                 onConfirm={handleConfirmDelete}
                 onClose={() => { if (!deleting) setShowDeleteModal(false) }}
                 deleting={deleting}
+            />
+
+            {/* Delete History Modal */}
+            <DeletePatientModal
+                isOpen={!!historyToDelete}
+                title="Delete History Entry"
+                itemName="this history record"
+                onConfirm={executeDeleteHistory}
+                onClose={() => { if (!deletingHistory) setHistoryToDelete(null) }}
+                deleting={deletingHistory}
             />
         </div>
     )

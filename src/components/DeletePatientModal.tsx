@@ -4,7 +4,9 @@ import { Trash2, X } from 'lucide-react'
 
 interface DeletePatientModalProps {
     isOpen: boolean
-    patientName: string
+    patientName?: string
+    title?: string
+    itemName?: string
     onConfirm: () => void
     onClose: () => void
     deleting?: boolean
@@ -13,6 +15,8 @@ interface DeletePatientModalProps {
 export default function DeletePatientModal({
     isOpen,
     patientName,
+    title,
+    itemName,
     onConfirm,
     onClose,
     deleting = false,
@@ -44,10 +48,10 @@ export default function DeletePatientModal({
                 </div>
 
                 {/* Title & message */}
-                <h2 className="text-base font-bold text-gray-900 text-center mb-1">Delete Patient</h2>
+                <h2 className="text-base font-bold text-gray-900 text-center mb-1">{title || 'Delete Patient'}</h2>
                 <p className="text-sm text-gray-500 text-center mb-6">
                     Are you sure you want to delete{' '}
-                    <span className="font-semibold text-gray-800">{patientName}</span>?
+                    <span className="font-semibold text-gray-800">{itemName || patientName}</span>?
                     <br />
                     <span className="text-xs text-red-500">This action cannot be undone.</span>
                 </p>

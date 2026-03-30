@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Patient } from '@/types/patient'
 import { getPatients, createPatient, deletePatient } from '@/lib/supabase/patientService'
-import { Search, Plus, Eye, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, Plus, Eye, Trash2, ArrowUp, ArrowDown, ArrowRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import AddPatientModal from '@/components/AddPatientModal'
@@ -163,31 +163,37 @@ export default function PatientsPage() {
 
             {/* Patients Table */}
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                {/* Mobile scroll signifier */}
+                <div className="w-full flex justify-end px-4 py-2 bg-gray-50 border-b border-gray-200 md:hidden">
+                    <span className="text-xs text-gray-500 italic flex items-center gap-1">
+                        Swipe to see more <ArrowRight className="w-3 h-3" />
+                    </span>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[700px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th
                                     onClick={() => toggleSort('patient_id')}
-                                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition"
+                                    className="px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition whitespace-nowrap"
                                 >
                                     <span className="inline-flex items-center gap-1">Patient ID <SortIcon field="patient_id" /></span>
                                 </th>
                                 <th
                                     onClick={() => toggleSort('name')}
-                                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition"
+                                    className="px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition whitespace-nowrap"
                                 >
                                     <span className="inline-flex items-center gap-1">Name <SortIcon field="name" /></span>
                                 </th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone</th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                                <th className="px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Phone</th>
+                                <th className="px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Email</th>
                                 <th
                                     onClick={() => toggleSort('last_visit')}
-                                    className="px-6 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition"
+                                    className="px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition whitespace-nowrap"
                                 >
                                     <span className="inline-flex items-center gap-1">Last Visit <SortIcon field="last_visit" /></span>
                                 </th>
-                                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -209,16 +215,16 @@ export default function PatientsPage() {
                                         key={patient.id}
                                         className="border-b border-gray-100 hover:bg-gray-50/50 transition"
                                     >
-                                        <td className="px-6 py-4 text-sm font-medium text-blue-600">
+                                        <td className="px-6 py-4 text-xs sm:text-sm font-medium text-blue-600">
                                             {patient.patient_id || '—'}
                                         </td>
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                        <td className="px-6 py-4 text-xs sm:text-sm font-medium text-gray-900">
                                             {patient.first_name} {patient.last_name}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">{patient.phone || '—'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">{patient.email || '—'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">{patient.last_visit || '—'}</td>
-                                        <td className="px-6 py-4 text-sm">
+                                        <td className="px-6 py-4 text-xs sm:text-sm text-gray-500">{patient.phone || '—'}</td>
+                                        <td className="px-6 py-4 text-xs sm:text-sm text-gray-500">{patient.email || '—'}</td>
+                                        <td className="px-6 py-4 text-xs sm:text-sm text-gray-500">{patient.last_visit || '—'}</td>
+                                        <td className="px-6 py-4 text-xs sm:text-sm">
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => router.push(`/patient-details?id=${patient.id}`)}

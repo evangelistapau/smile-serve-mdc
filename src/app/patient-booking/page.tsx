@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, X, Check, MapPin, Phone, Mail, Info } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, MapPin, Phone, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import {
     getBookedTimeSlots,
@@ -397,7 +397,7 @@ function TimeSlots({
                 {allUnavailable && (
                     <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm font-semibold text-red-600">
-                            {isDayBlocked ? '⏳ This day is unavailable for booking' : '❌ No available slots for this day'}
+                            {isDayBlocked ? 'This day is unavailable for booking' : 'No available slots for this day'}
                         </p>
                         <p className="text-xs text-red-500 mt-1">Please select another date.</p>
                     </div>
