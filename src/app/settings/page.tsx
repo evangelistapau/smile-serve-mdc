@@ -81,9 +81,11 @@ export default function SettingsPage() {
     return (
         <div className="w-full space-y-6">
             {/* ═══ Account Information ═══ */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-                    <User className="w-5 h-5 text-gray-700" />
+            <div className="bg-white border border-blue-100 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-blue-100/60">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-blue-600" />
+                    </div>
                     <h3 className="text-lg font-bold text-gray-900">Account Information</h3>
                 </div>
 
@@ -165,9 +167,9 @@ export default function SettingsPage() {
 
                             <button
                                 onClick={() => router.push('/reset-password')}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                                className="inline-flex items-center gap-2 px-4 py-2 border border-blue-200 bg-white rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition"
                             >
-                                <Lock className="w-4 h-4" />
+                                <Lock className="w-4 h-4 text-blue-500" />
                                 Reset Password
                             </button>
                         </>
@@ -181,11 +183,13 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ═══ Email Sending Limit (Brevo) ═══ */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-                        <Mail className="w-5 h-5 text-gray-700" />
+                <div className="bg-white border border-blue-100 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2.5 px-6 py-5 border-b border-blue-100/60">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <Mail className="w-4 h-4 text-blue-600" />
+                        </div>
                         <h3 className="text-lg font-bold text-gray-900">Email Sending Limit</h3>
-                        <span className="ml-auto text-xs text-gray-400">via Brevo</span>
+                        <span className="ml-auto text-xs text-blue-500 bg-blue-50 px-2.5 py-1 rounded-full font-medium">via Brevo</span>
                     </div>
 
                     <div className="px-6 py-6">
@@ -223,11 +227,13 @@ export default function SettingsPage() {
                 </div>
 
                 {/* ═══ Database Size (Supabase) ═══ */}
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-                        <Database className="w-5 h-5 text-gray-700" />
+                <div className="bg-white border border-blue-100 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-2.5 px-6 py-5 border-b border-blue-100/60">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <Database className="w-4 h-4 text-blue-600" />
+                        </div>
                         <h3 className="text-lg font-bold text-gray-900">Database Size</h3>
-                        <span className="ml-auto text-xs text-gray-400">via Supabase</span>
+                        <span className="ml-auto text-xs text-blue-500 bg-blue-50 px-2.5 py-1 rounded-full font-medium">via Supabase</span>
                     </div>
 
                     <div className="px-6 py-6">
@@ -274,9 +280,11 @@ export default function SettingsPage() {
             </div>{/* end two-column grid */}
 
             {/* ═══ Login History ═══ */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-                    <History className="w-5 h-5 text-gray-700" />
+            <div className="bg-white border border-blue-100 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-blue-100/60">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <History className="w-4 h-4 text-blue-600" />
+                    </div>
                     <h3 className="text-lg font-bold text-gray-900">Login History</h3>
                 </div>
 
@@ -289,36 +297,38 @@ export default function SettingsPage() {
                     ) : loginHistory.length === 0 ? (
                         <p className="text-sm text-gray-400 py-4">No login history found.</p>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-100">
-                                        <th className="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Date & Time</th>
-                                        <th className="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Device</th>
-                                        <th className="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wider">IP Address</th>
-                                        <th className="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+                        <div className="overflow-x-auto overflow-y-auto max-h-[350px] md:max-h-[500px] rounded-b-lg">
+                            <table className="w-full text-sm relative">
+                                <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                                    <tr className="border-b border-blue-50">
+                                        <th className="text-left py-3 px-2 text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Date & Time</th>
+                                        <th className="text-left py-3 px-2 text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider">Device</th>
+                                        <th className="text-left py-3 px-2 text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider">IP Address</th>
+                                        <th className="text-left py-3 px-2 text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loginHistory.map((entry) => (
-                                        <tr key={entry.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition">
-                                            <td className="py-3 px-2 text-gray-700">
-                                                {new Date(entry.createdAt).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                })}{' '}
-                                                <span className="text-gray-400">
+                                        <tr key={entry.id} className="border-b border-gray-50 last:border-0 hover:bg-blue-50/50 transition">
+                                            <td className="py-3 px-2 text-[10px] md:text-sm text-gray-700 whitespace-nowrap">
+                                                <div className="font-semibold text-gray-900">
+                                                    {new Date(entry.createdAt).toLocaleDateString('en-US', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    })}
+                                                </div>
+                                                <div className="text-gray-500 mt-0.5">
                                                     {new Date(entry.createdAt).toLocaleTimeString('en-US', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}
-                                                </span>
+                                                </div>
                                             </td>
-                                            <td className="py-3 px-2 text-gray-700">{entry.device}</td>
-                                            <td className="py-3 px-2 text-gray-500 font-mono text-xs">{entry.ipAddress}</td>
+                                            <td className="py-3 px-2 text-[10px] md:text-sm text-gray-700">{entry.device}</td>
+                                            <td className="py-3 px-2 text-gray-500 font-mono text-[9px] md:text-xs min-w-[80px]">{entry.ipAddress}</td>
                                             <td className="py-3 px-2">
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] md:text-xs font-medium bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
                                                     {entry.status}
                                                 </span>
                                             </td>

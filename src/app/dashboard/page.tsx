@@ -14,6 +14,7 @@ import {
     Users,
     CalendarDays,
     CalendarCheck,
+    CalendarRange,
     ChevronRight,
     CalendarPlus,
     UserPlus,
@@ -136,44 +137,73 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Quick Actions - Prominent Section */}
-                <div className="flex-shrink-0 flex items-center gap-3">
+                <div className="flex-shrink-0 flex items-center gap-2 md:gap-3">
                     <Link href="/patients?action=add" className="flex-1">
                         <Button
                             variant="outline"
-                            className="w-full h-10 rounded-xl border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 hover:border-blue-300 text-blue-700 font-semibold transition-all"
+                            className="w-full h-9 md:h-10 rounded-xl border-blue-200 bg-blue-50/50 hover:bg-blue-100/70 hover:border-blue-300 text-blue-700 font-semibold transition-all text-xs md:text-sm"
                         >
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Add Patient
+                            <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="hidden sm:inline">Add Patient</span>
+                            <span className="sm:hidden">Add Patient</span>
                         </Button>
                     </Link>
                     <Link href="/patient-booking"
                         target="_blank"
                         rel="noopener noreferrer" className="flex-1">
                         <Button
-                            className="w-full h-10 rounded-xl bg-blue-500 hover:bg-blue-700 text-white font-semibold transition-all"
+                            className="w-full h-9 md:h-10 rounded-xl bg-blue-500 hover:bg-blue-700 text-white font-semibold transition-all text-xs md:text-sm"
                         >
-                            <CalendarPlus className="w-4 h-4 mr-2" />
-                            Book for Walk-in
+                            <CalendarPlus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                            <span className="hidden sm:inline">Book for Walk-in</span>
+                            <span className="sm:hidden">Book for Walk-in</span>
                         </Button>
                     </Link>
                 </div>
 
                 {/* Stat Cards */}
-                <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="flex-shrink-0 grid grid-cols-3 gap-1.5 sm:gap-3 items-center">
                     {/* Patients */}
-                    <Link href="/patients">
-                        <Card className="h-full hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30">
-                            <CardContent className="p-4 flex flex-col justify-between h-full">
-                                <div className="flex items-start justify-between">
-                                    <p className="text-sm font-semibold text-gray-700 tracking-tight">Total Patients</p>
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                        <Users className="w-4 h-4 text-blue-600" />
+                    <Link href="/patients" className="flex-1">
+                        <Card className="aspect-square sm:aspect-auto sm:h-full min-h-[90px] hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30 group rounded-2xl sm:rounded-xl">
+                            <CardContent className="p-2 sm:px-3 sm:py-1 md:p-3 md:py-1.5 flex flex-col justify-between h-full">
+
+                                {/* Mobile */}
+                                <div className="flex sm:hidden flex-col items-center justify-center text-center h-full w-full min-w-0 px-1">
+
+                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mb-1">
+                                        <Users className="w-2.5 h-2.5 text-blue-600" />
+                                    </div>
+
+                                    <p className="text-[10px] font-semibold text-gray-700 text-center leading-snug break-words max-w-full px-1">
+                                        Total<br />Patients
+                                    </p>
+
+                                    <p className="text-xl font-bold text-gray-900 leading-none">
+                                        {stats?.totalPatients || 0}
+                                    </p>
+
+                                    <p className="w-full text-[9px] text-blue-600 font-medium flex items-center justify-start gap-0.5 mt-auto pt-1 pb-1">
+                                        View more details <ChevronRight className="w-2 h-2" />
+                                    </p>
+                                </div>
+
+                                {/* Desktop */}
+                                <div className="hidden sm:flex items-start justify-between w-full">
+                                    <p className="text-[10px] md:text-sm font-semibold text-gray-700 leading-tight">
+                                        Total Patients
+                                    </p>
+                                    <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <Users className="w-3 md:w-4 md:h-4 text-blue-600" />
                                     </div>
                                 </div>
-                                <div className="mt-2">
-                                    <p className="text-4xl font-bold text-gray-900">{stats?.totalPatients || 0}</p>
-                                    <p className="text-xs text-blue-600 font-medium mt-1.5 flex items-center gap-0.5">
-                                        View more details<ChevronRight className="w-3 h-3" />
+
+                                <div className="hidden sm:block mt-1 md:mt-2">
+                                    <p className="text-xl md:text-4xl font-bold text-gray-900">
+                                        {stats?.totalPatients || 0}
+                                    </p>
+                                    <p className="text-[9px] md:text-xs text-blue-600 font-medium mt-1 flex items-center gap-0.5">
+                                        View more details <ChevronRight className="w-2 h-2 md:w-3 md:h-3" />
                                     </p>
                                 </div>
                             </CardContent>
@@ -181,19 +211,46 @@ export default function DashboardPage() {
                     </Link>
 
                     {/* Today's Appointments */}
-                    <Link href="/appointments?view=day">
-                        <Card className="h-full hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30">
-                            <CardContent className="p-4 flex flex-col justify-between h-full">
-                                <div className="flex items-start justify-between">
-                                    <p className="text-sm font-semibold text-gray-700 tracking-tight leading-tight">Today&apos;s Appointments</p>
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                        <CalendarDays className="w-4 h-4 text-blue-600" />
+                    <Link href="/appointments?view=day" className="flex-1">
+                        <Card className="aspect-square sm:aspect-auto sm:h-full min-h-[90px] hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30 group rounded-2xl sm:rounded-xl">
+                            <CardContent className="p-2 sm:px-3 sm:py-1 md:p-3 md:py-1.5 flex flex-col justify-between h-full">
+
+                                {/* Mobile */}
+                                <div className="flex sm:hidden flex-col items-center justify-center text-center h-full w-full min-w-0 px-1">
+
+                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mb-1">
+                                        <CalendarCheck className="w-2.5 h-2.5 text-blue-600" />
+                                    </div>
+
+                                    <p className="text-[10px] font-semibold text-gray-700 text-center leading-snug break-words max-w-full px-1">
+                                        Today&apos;s<br />Appointments
+                                    </p>
+
+                                    <p className="text-xl font-bold text-gray-900 leading-none">
+                                        {stats?.todayAppointmentsCount || 0}
+                                    </p>
+
+                                    <p className="w-full text-[9px] text-blue-600 font-medium flex items-center justify-start gap-0.5 mt-auto pt-1 pb-1">
+                                        View more details <ChevronRight className="w-2 h-2" />
+                                    </p>
+                                </div>
+
+                                {/* Desktop */}
+                                <div className="hidden sm:flex items-start justify-between w-full">
+                                    <p className="text-[10px] md:text-sm font-semibold text-gray-700 leading-tight">
+                                        Today&apos;s Appointments
+                                    </p>
+                                    <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <CalendarCheck className="w-3 md:w-4 md:h-4 text-blue-600" />
                                     </div>
                                 </div>
-                                <div className="mt-2">
-                                    <p className="text-4xl font-bold text-gray-900">{stats?.todayAppointmentsCount || 0}</p>
-                                    <p className="text-xs text-blue-600 font-medium mt-1.5 flex items-center gap-0.5">
-                                        View more details <ChevronRight className="w-3 h-3" />
+
+                                <div className="hidden sm:block mt-1 md:mt-2">
+                                    <p className="text-xl md:text-4xl font-bold text-gray-900">
+                                        {stats?.todayAppointmentsCount || 0}
+                                    </p>
+                                    <p className="text-[9px] md:text-xs text-blue-600 font-medium mt-1 flex items-center gap-0.5">
+                                        View more details <ChevronRight className="w-2 h-2 md:w-3 md:h-3" />
                                     </p>
                                 </div>
                             </CardContent>
@@ -201,19 +258,44 @@ export default function DashboardPage() {
                     </Link>
 
                     {/* Total Appointments */}
-                    <Link href="/appointments?view=calendar">
-                        <Card className="h-full hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30">
-                            <CardContent className="p-4 flex flex-col justify-between h-full">
-                                <div className="flex items-start justify-between">
-                                    <p className="text-sm font-semibold text-gray-700 tracking-tight leading-tight">Total Appointments</p>
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                        <CalendarCheck className="w-4 h-4 text-blue-600" />
+                    <Link href="/appointments?view=calendar" className="flex-1">
+                        <Card className="aspect-square sm:aspect-auto sm:h-full min-h-[90px] hover:shadow-md transition-shadow border border-blue-100 cursor-pointer bg-blue-50/30 group rounded-2xl sm:rounded-xl">
+                            <CardContent className="p-2 sm:px-3 sm:py-1 md:p-3 md:py-1.5 flex flex-col justify-between h-full">
+
+                                {/* Mobile */}
+                                <div className="flex sm:hidden flex-col items-center justify-center text-center h-full w-full min-w-0 px-1">
+                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mb-1">
+                                        <CalendarDays className="w-2.5 h-2.5 text-blue-600" />
+                                    </div>
+                                    <p className="text-[10px] font-semibold text-gray-700 text-center leading-snug break-words max-w-full px-1">
+                                        Total<br />Appointments
+                                    </p>
+
+                                    <p className="text-xl font-bold text-gray-900 leading-none">
+                                        {stats?.totalAppointments || 0}
+                                    </p>
+
+                                    <p className="w-full text-[9px] text-blue-600 font-medium flex items-center justify-start gap-0.5 mt-1">
+                                        View more details <ChevronRight className="w-2 h-2" />
+                                    </p>
+                                </div>
+
+                                {/* Desktop */}
+                                <div className="hidden sm:flex items-start justify-between w-full">
+                                    <p className="text-[10px] md:text-sm font-semibold text-gray-700 leading-tight">
+                                        Total Appointments
+                                    </p>
+                                    <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <CalendarDays className="w-3 md:w-4 md:h-4 text-blue-600" />
                                     </div>
                                 </div>
-                                <div className="mt-2">
-                                    <p className="text-4xl font-bold text-gray-900">{stats?.totalAppointments || 0}</p>
-                                    <p className="text-xs text-blue-600 font-medium mt-1.5 flex items-center gap-0.5">
-                                        View more details <ChevronRight className="w-3 h-3" />
+
+                                <div className="hidden sm:block mt-1 md:mt-2">
+                                    <p className="text-xl md:text-4xl font-bold text-gray-900">
+                                        {stats?.totalAppointments || 0}
+                                    </p>
+                                    <p className="text-[9px] md:text-xs text-blue-600 font-medium mt-1 flex items-center gap-0.5">
+                                        View more details <ChevronRight className="w-2 h-2 md:w-3 md:h-3" />
                                     </p>
                                 </div>
                             </CardContent>
@@ -223,7 +305,7 @@ export default function DashboardPage() {
 
                 {/* Upcoming Week Summary */}
                 <Card className="flex-shrink-0 min-h-[180px] flex flex-col overflow-hidden border border-blue-100 bg-slate-50/50">
-                    <CardHeader className="flex-shrink-0 flex flex-row items-start justify-between pb-1 pt-3 px-5">
+                    <CardHeader className="flex-shrink-0 flex flex-row items-start justify-between pb-1 pt-3 px-3 md:px-5">
                         <div>
                             <CardTitle className="text-sm font-semibold text-gray-800 tracking-tight">
                                 Upcoming Week
@@ -232,23 +314,23 @@ export default function DashboardPage() {
                                 {totalUpcoming} booking{totalUpcoming !== 1 ? 's' : ''} in the next 7 days
                             </CardDescription>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <CalendarDays className="w-4 h-4 text-blue-600" />
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <CalendarRange className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600" />
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex-1 min-h-0 px-5 pb-4 pt-1">
+                    <CardContent className="flex-1 min-h-0 px-3 md:px-5 pb-3 md:pb-4 pt-1">
                         <div className="h-full flex flex-col justify-end gap-2">
                             {/* Bars */}
-                            <div className="flex-1 flex items-end gap-3">
+                            <div className="flex-1 min-h-[80px] flex items-end gap-2 md:gap-3">
                                 {upcomingWeekSummary.map((day, idx) => {
                                     const isToday = idx === 0
-                                    const heightPct = day.count === 0 ? 6 : Math.round((day.count / maxWeekCount) * 100)
+                                    const heightPct = day.count === 0 ? 8 : Math.max(12, Math.round((day.count / maxWeekCount) * 100))
 
                                     return (
                                         <div key={day.dateStr} className="flex-1 flex flex-col items-center justify-end h-full group">
                                             <span className={cn(
-                                                "text-[10px] font-semibold mb-1.5 transition-opacity",
+                                                "text-[10px] font-semibold mb-1 transition-opacity",
                                                 day.count === 0 ? "opacity-0" : "opacity-100",
                                                 isToday ? "text-blue-600" : "text-gray-400"
                                             )}>
@@ -269,7 +351,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Day labels */}
-                            <div className="flex-shrink-0 flex gap-3">
+                            <div className="flex-shrink-0 flex gap-2 md:gap-3">
                                 {upcomingWeekSummary.map((day, idx) => {
                                     const isToday = idx === 0
                                     return (
@@ -290,12 +372,12 @@ export default function DashboardPage() {
             </div>
 
             {/* ── Right Panel — Today's Schedule ── */}
-            <div className="xl:col-span-1 md:h-full md:overflow-hidden">
-                <div className="bg-white flex flex-col h-full border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="xl:col-span-1 h-[450px] sm:h-[500px] md:h-full md:overflow-hidden flex flex-col min-h-0">
+                <div className="bg-white flex flex-col h-full min-h-0 border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
 
                     {/* Week Calendar Header */}
-                    <div className="flex-shrink-0 p-5 pb-4 border-b border-gray-100">
-                        <div className="flex items-center justify-center mb-4">
+                    <div className="flex-shrink-0 p-4 md:p-5 pb-3 md:pb-4 border-b border-gray-100">
+                        <div className="flex items-center justify-center mb-3 md:mb-4">
                             <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
                                 {today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                             </div>
@@ -316,7 +398,7 @@ export default function DashboardPage() {
                                             {cell.dayLabel}
                                         </span>
                                         <div className={cn(
-                                            "w-7 h-7 flex items-center justify-center text-xs font-medium rounded-full select-none transition-colors",
+                                            "w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-medium rounded-full select-none transition-colors",
                                             isToday
                                                 ? "bg-blue-600 text-white font-semibold"
                                                 : "text-gray-500 hover:bg-gray-50"
@@ -333,10 +415,10 @@ export default function DashboardPage() {
                             })}
                         </div>
 
-                        <div className="mt-4">
+                        <div className="mt-3 md:mt-4">
                             <Button
                                 variant="outline"
-                                className="w-full rounded-lg text-sm h-9 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                className="w-full rounded-lg text-xs md:text-sm h-8 md:h-9 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                 asChild
                             >
                                 <Link href="/appointments?view=calendar">View Full Calendar</Link>
@@ -345,10 +427,10 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Today's Timeline - Shows ALL appointments */}
-                    <div className="flex-1 min-h-0 flex flex-col p-5 pt-4">
+                    <div className="flex-1 min-h-0 flex flex-col p-4 md:p-5 pt-3 md:pt-4">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-gray-900">
+                                <h3 className="text-sm md:text-base font-semibold text-gray-900">
                                     {today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                                 </h3>
 
@@ -400,6 +482,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

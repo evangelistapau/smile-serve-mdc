@@ -137,19 +137,27 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             </div>
 
             {/* Mobile sidebar — overlay */}
-            {mobileOpen && (
-                <div className="fixed inset-0 z-40 md:hidden">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/50"
-                        onClick={onMobileClose}
-                    />
-                    {/* Sidebar panel */}
-                    <div className="relative z-50 h-full w-64 animate-in slide-in-from-left duration-300">
-                        {sidebarContent}
-                    </div>
+            <div 
+                className={`fixed inset-0 z-40 md:hidden ${
+                    mobileOpen ? 'pointer-events-auto' : 'pointer-events-none'
+                }`}
+            >
+                {/* Backdrop */}
+                <div
+                    className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+                        mobileOpen ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onClick={onMobileClose}
+                />
+                {/* Sidebar panel */}
+                <div 
+                    className={`relative z-50 h-full w-64 transition-transform duration-300 ease-in-out bg-white ${
+                        mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full shadow-none'
+                    }`}
+                >
+                    {sidebarContent}
                 </div>
-            )}
+            </div>
         </>
     )
 }
