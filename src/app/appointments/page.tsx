@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { ChevronLeft, ChevronRight, X, Settings, Lock, Unlock, ExternalLink, Clock, User, Phone } from 'lucide-react'
 import {
     getAppointmentsForDate,
@@ -75,7 +76,6 @@ export default function AppointmentsPage() {
     const today = new Date()
     const searchParams = useSearchParams()
 
-    // Read ?view=day|week|calendar from URL, default to 'calendar'
     const initialView = (searchParams.get('view') as ViewMode) ?? 'calendar'
     const validViews: ViewMode[] = ['calendar', 'day', 'week']
     const [viewMode, setViewMode] = useState<ViewMode>(
@@ -86,7 +86,6 @@ export default function AppointmentsPage() {
     const [calMonth, setCalMonth] = useState(today.getMonth())
     const [calYear, setCalYear] = useState(today.getFullYear())
 
-    // Data
     const [dayAppointments, setDayAppointments] = useState<Appointment[]>([])
     const [monthAppointments, setMonthAppointments] = useState<Appointment[]>([])
     const [weekAppointments, setWeekAppointments] = useState<Appointment[]>([])
@@ -95,13 +94,11 @@ export default function AppointmentsPage() {
     const [monthUnavailable, setMonthUnavailable] = useState<UnavailableSlot[]>([])
     const [loading, setLoading] = useState(false)
 
-    // Modal
     const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
     const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
 
     const dateStr = toDateStr(selectedDate)
 
-    // ─── Fetch day appointments ─────────────────────────────
     const loadDayData = useCallback(async () => {
         setLoading(true)
         const [appts, unavail] = await Promise.all([
@@ -115,18 +112,16 @@ export default function AppointmentsPage() {
 
     useEffect(() => { loadDayData() }, [loadDayData])
 
-    // ─── Fetch month appointments + unavailable days ────────
     const loadMonthData = useCallback(() => {
         const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
         const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
-        const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+        const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '00')}-${String(lastDay).padStart(2, '0')}`
         getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
         getUnavailableSlotsForRange(startDate, endDate).then(setMonthUnavailable)
     }, [calYear, calMonth])
 
     useEffect(() => { loadMonthData() }, [loadMonthData])
 
-    // ─── Fetch week data ────────────────────────────────────
     const loadWeekData = useCallback(() => {
         if (viewMode !== 'week') return
         const dates = getWeekDates(selectedDate)
@@ -143,7 +138,6 @@ export default function AppointmentsPage() {
 
     useEffect(() => { loadWeekData() }, [loadWeekData])
 
-    // ─── Realtime ───────────────────────────────────────────
     const handleRealtimeUpdate = useCallback(() => {
         loadDayData()
         loadMonthData()
@@ -152,7 +146,6 @@ export default function AppointmentsPage() {
 
     useRealtimeAppointments(handleRealtimeUpdate)
 
-    // ─── Navigation ─────────────────────────────────────────
     const handlePrev = () => {
         if (viewMode === 'calendar') {
             const newMonth = calMonth === 0 ? 11 : calMonth - 1
@@ -191,6 +184,7 @@ export default function AppointmentsPage() {
         if (!appointmentToDelete) return
         const success = await deleteAppointment(appointmentToDelete)
         if (success) {
+            toast.success('Appointment deleted successfully.')
             loadDayData()
             const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
             const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
@@ -200,30 +194,28 @@ export default function AppointmentsPage() {
                 const dates = getWeekDates(selectedDate)
                 getAppointmentsForDateRange(toDateStr(dates[0]), toDateStr(dates[6])).then(setWeekAppointments)
             }
+        } else {
+            toast.error('Failed to delete appointment. Please try again.')
         }
         setAppointmentToDelete(null)
     }
 
-    // ─── Header label ───────────────────────────────────────
     const headerLabel = viewMode === 'calendar'
         ? `${MONTH_NAMES[calMonth]} ${calYear}`
         : viewMode === 'day'
             ? `${MONTH_NAMES[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`
             : `${MONTH_NAMES[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`
 
-    // ─── Booking counts per date (for calendar view) ────────
     const bookingCounts: Record<string, number> = {}
     monthAppointments.forEach((a) => {
         bookingCounts[a.appointment_date] = (bookingCounts[a.appointment_date] || 0) + 1
     })
 
-    // ─── Fully-unavailable days set (for calendar coloring) ─
     const unavailableDays = new Set<string>()
     monthUnavailable.forEach((s) => {
         if (s.time_slot === null) unavailableDays.add(s.date)
     })
 
-    // ─── Unavailable flags ───────────────────────────────────
     const isDayUnavailable = unavailableSlots.some((s) => s.time_slot === null)
     const unavailableTimeSlots = new Set(
         unavailableSlots.filter((s) => s.time_slot !== null).map((s) => s.time_slot!)
@@ -232,27 +224,39 @@ export default function AppointmentsPage() {
     return (
         <div className="h-full flex flex-col overflow-hidden">
 
-            {/* ═══ Toolbar ═══ */}
-            <div className="flex-shrink-0 flex flex-wrap gap-3 items-center justify-between mb-4">
-                {/* LEFT: Navigation */}
-                <div className="flex items-center gap-2">
-                    <button onClick={handlePrev} className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition text-gray-600">
+            {/* ═══ Toolbar ═══
+                Mobile:  stacked — nav row centered, then controls row centered
+                Desktop: single row, space-between
+            ═══ */}
+            <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+
+                {/* Navigation — centered on mobile */}
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <button
+                        onClick={handlePrev}
+                        className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition text-gray-600"
+                    >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-sm font-semibold text-gray-700 min-w-[140px] text-center px-1">{headerLabel}</span>
-                    <button onClick={handleNext} className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition text-gray-600">
+                    <span className="text-sm font-semibold text-gray-700 min-w-[160px] text-center px-1">
+                        {headerLabel}
+                    </span>
+                    <button
+                        onClick={handleNext}
+                        className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition text-gray-600"
+                    >
                         <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
 
-                {/* RIGHT: View toggle + Book Appointment */}
-                <div className="flex items-center gap-2 flex-wrap">
+                {/* View toggle + Book — centered on mobile */}
+                <div className="flex items-center justify-center sm:justify-end gap-2">
                     <div className="flex border border-gray-200 rounded-lg overflow-hidden">
                         {(['calendar', 'day', 'week'] as ViewMode[]).map((mode) => (
                             <button
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
-                                className={`px-3 py-2 text-xs sm:text-sm font-medium transition ${viewMode === mode
+                                className={`px-3 py-2 text-xs font-medium transition ${viewMode === mode
                                     ? 'bg-blue-500 text-white'
                                     : 'bg-white text-gray-600 hover:bg-gray-50'
                                     }`}
@@ -265,16 +269,15 @@ export default function AppointmentsPage() {
                         href="/patient-booking"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-400 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-500 active:scale-[0.97] transition shadow-sm"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-400 text-white text-xs font-medium rounded-lg hover:bg-blue-500 active:scale-[0.97] transition shadow-sm"
                     >
-                        <span className="hidden sm:inline">Book Appointment</span>
-                        <span className="sm:hidden">Book</span>
+                        <span>Book</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                 </div>
             </div>
 
-            {/* ═══ Views — fills remaining height ═══ */}
+            {/* ═══ Views ═══ */}
             <div className="flex-1 min-h-0">
                 {viewMode === 'calendar' && (
                     <CalendarView
@@ -404,11 +407,15 @@ function CalendarView({
             {/* Calendar Grid */}
             <div className="lg:col-span-2 min-h-0 flex flex-col">
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden p-3 sm:p-4 md:p-5 flex flex-col flex-1 min-h-0">
-                    {/* Legend — top */}
-                    <div className="flex items-center gap-4 mb-2 flex-shrink-0">
+                    {/* Legend */}
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-2 flex-shrink-0">
                         <div className="flex items-center gap-1.5 text-xs text-gray-500">
                             <div className="w-2.5 h-2.5 rounded bg-blue-600" />
                             <span>Selected</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <div className="w-2.5 h-2.5 rounded bg-blue-50 border border-blue-200" />
+                            <span>Has Bookings</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-gray-500">
                             <div className="w-2.5 h-2.5 rounded bg-red-50 border border-red-200" />
@@ -418,11 +425,11 @@ function CalendarView({
 
                     <div className="grid grid-cols-7 gap-0.5 mb-1 flex-shrink-0">
                         {DAY_LABELS.map((d) => (
-                            <div key={d} className="text-center text-[12px] font-medium text-gray-400 py-0.5">{d}</div>
+                            <div key={d} className="text-center text-[11px] font-medium text-gray-400 py-0.5">{d}</div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-0.5 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-7 gap-1 p-1 sm:p-2 flex-1 overflow-y-auto">
                         {cells.map((date, i) => {
                             if (!date) return <div key={`e-${i}`} className="aspect-square bg-gray-50/50 rounded" />
 
@@ -442,15 +449,16 @@ function CalendarView({
                                             ? 'bg-blue-600 text-white shadow ring-1 ring-blue-600 ring-offset-1'
                                             : isUnavailable
                                                 ? 'bg-red-50 border border-red-200 text-red-400 cursor-pointer'
-                                                : 'bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer'}
+                                                : count > 0
+                                                    ? 'bg-blue-50 border border-blue-200 hover:bg-blue-100 cursor-pointer'
+                                                    : 'bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer'}
                                     `}
                                 >
-                                    <div
-                                        className={`text-md md:text-lg font-semibold leading-none ${isToday && !isSelected ? 'text-blue-600' : ''
-                                            }`}
-                                    >{date.getDate()}</div>
+                                    <div className={`text-md md:text-lg font-semibold leading-none ${isToday && !isSelected ? 'text-blue-600' : ''}`}>
+                                        {date.getDate()}
+                                    </div>
                                     {count > 0 && (
-                                        <div className={`text-[9px] mt-0.5 leading-none ${isSelected ? 'text-blue-100' : isUnavailable ? 'text-red-300' : 'text-gray-400'}`}>
+                                        <div className={`text-[7px] sm:text-[9px] mt-0.5 leading-normal truncate w-full px-0.5 pb-px text-center ${isSelected ? 'text-blue-100' : isUnavailable ? 'text-red-300' : 'text-blue-500'}`}>
                                             {count} bookings
                                         </div>
                                     )}
@@ -461,8 +469,11 @@ function CalendarView({
                 </div>
             </div>
 
-            {/* Sidebar — fixed height, appointment list scrolls */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col min-h-0">
+            {/* ── Sidebar ──
+                On mobile: fixed max-height so it scrolls independently.
+                On desktop (lg): fills available height via flex.
+            */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 sm:p-5 flex flex-col max-h-64 lg:max-h-none min-h-0">
                 <h3 className="text-sm font-bold text-gray-900 mb-3 flex-shrink-0">{formattedSelectedDate}</h3>
 
                 <button
@@ -473,7 +484,6 @@ function CalendarView({
                     Customize Availability
                 </button>
 
-                {/* Scrollable appointment list */}
                 <div className="flex-1 min-h-0 overflow-y-auto">
                     {loading ? (
                         <div className="flex items-center gap-2 py-4">
@@ -558,7 +568,6 @@ function DayView({
 
     return (
         <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
-            {/* Fixed header */}
             <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-100">
                 <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
                 <button
@@ -566,11 +575,10 @@ function DayView({
                     className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${isDayUnavailable ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}
                 >
                     {isDayUnavailable ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    {isDayUnavailable ? 'Make Day Available' : 'Make Day Unavailable'}
+                    {isDayUnavailable ? 'Make Available' : 'Make Unavailable'}
                 </button>
             </div>
 
-            {/* Scrollable slot list */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="flex items-center gap-3 px-6 py-12 justify-center">
@@ -684,9 +692,7 @@ function WeekView({
                                         }`}
                                 >
                                     <div className="text-[10px] sm:text-xs font-semibold uppercase">{DAY_LABELS_SHORT[d.getDay()]}</div>
-                                    <div className={`text-base sm:text-lg font-bold mt-0.5`}>
-                                        {d.getDate()}
-                                    </div>
+                                    <div className="text-base sm:text-lg font-bold mt-0.5">{d.getDate()}</div>
                                     {isDayFull && <div className="text-[8px] sm:text-[9px] font-medium text-red-400">Off</div>}
                                 </th>
                             )
@@ -707,7 +713,6 @@ function WeekView({
 
                                 return (
                                     <td key={ds} className="px-1 py-1">
-                                        {/* Fixed-height wrapper so all cells are uniform */}
                                         <div className="h-[68px] relative">
                                             {isDayFull || isSlotUnavail ? (
                                                 <div className="h-full bg-gray-100 rounded-md flex items-center justify-center">
