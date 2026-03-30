@@ -86,12 +86,12 @@ export default function SmsSettingsPage() {
     // ─── Status badge ─────────────────────────────────────────
     const statusBadge = (status: string) => {
         const styles: Record<string, string> = {
-            sent: "bg-green-100 text-green-700",
-            pending: "bg-yellow-100 text-yellow-700",
-            failed: "bg-red-100 text-red-600",
+            sent: "bg-green-50 text-green-700 border-green-200",
+            pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+            failed: "bg-red-50 text-red-700 border-red-200",
         }
         return (
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${styles[status] ?? "bg-gray-100 text-gray-600"}`}>
+            <span className={`px-2 py-0.5 border rounded-full text-[9px] md:text-xs font-semibold ${styles[status] ?? "bg-gray-50 text-gray-600 border-gray-200"}`}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
         )
@@ -109,141 +109,153 @@ export default function SmsSettingsPage() {
     return (
         <div className="space-y-6">
             {/* SMS Configuration Card */}
-            <Card className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <Bell className="w-6 h-6 text-primary" />
-                    <h2 className="text-2xl font-bold text-foreground">SMS Configuration</h2>
+            <div className="bg-white border border-blue-100 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2.5 px-6 py-5 border-b border-blue-100/60">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <Bell className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">SMS Configuration</h3>
                 </div>
 
-                <div className="space-y-6">
+                <div className="px-6 py-6 space-y-6">
                     <div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">Sender Phone Number</label>
+                                <label className="block text-[10px] md:text-sm font-semibold text-gray-700 mb-1.5">Sender Phone Number</label>
                                 <input
                                     type="tel"
                                     value={smsSettings.senderNumber}
                                     onChange={(e) => handleSmsChange("senderNumber", e.target.value)}
-                                    className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg text-[10px] md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm"
                                     placeholder="+639123456789"
                                 />
-                                <p className="text-xs text-muted-foreground mt-1">Include country code (e.g., +63 for PH)</p>
+                                <p className="text-[10px] md:text-xs text-blue-500 mt-1.5 font-medium">Include country code (e.g., +63 for PH)</p>
                             </div>
                         </div>
                     </div>
 
                     {/* SMS Message Templates */}
-                    <div className="border-t border-border pt-6">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Message Templates</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Available variables: <code className="bg-gray-100 px-1 rounded">{"{patient_name}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{appointment_date}"}</code>, <code className="bg-gray-100 px-1 rounded">{"{appointment_time}"}</code>
+                    <div className="border-t border-blue-50 pt-6">
+                        <h4 className="text-[10px] md:text-sm font-semibold text-gray-900 mb-2">Message Templates</h4>
+                        <p className="text-[9px] md:text-xs text-gray-500 mb-4">
+                            Available variables: <code className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded mr-1">{"{patient_name}"}</code> <code className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded mr-1">{"{appointment_date}"}</code> <code className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">{"{appointment_time}"}</code>
                         </p>
 
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-foreground mb-2">Booking Confirmation Message</label>
+                        <div className="mb-5">
+                            <label className="block text-[10px] md:text-xs font-semibold text-gray-700 mb-1.5">Booking Confirmation Message</label>
                             <textarea
                                 value={smsSettings.confirmedBookingMessage}
                                 onChange={(e) => handleSmsChange("confirmedBookingMessage", e.target.value)}
                                 rows={3}
-                                className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-[10px] md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Reminder Message (2 hours before)</label>
+                            <label className="block text-[10px] md:text-xs font-semibold text-gray-700 mb-1.5">Reminder Message <span className="text-gray-400 font-normal ml-0.5">(2 hours before)</span></label>
                             <textarea
                                 value={smsSettings.reminderMessage}
                                 onChange={(e) => handleSmsChange("reminderMessage", e.target.value)}
                                 rows={3}
-                                className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-[10px] md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm"
                             />
                         </div>
                     </div>
 
-                    <div className="border-t border-border pt-6">
-                        <Button onClick={handleSave} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700">
+                    <div className="border-t border-blue-50 pt-6">
+                        <Button onClick={handleSave} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-10 text-[10px] md:text-sm font-semibold shadow-sm transition">
                             {saving ? "Saving..." : "Save SMS Settings"}
                         </Button>
                     </div>
                 </div>
-            </Card>
+            </div>
 
             {/* SMS Messages History */}
-            <Card className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <Bell className="w-6 h-6 text-primary" />
-                        <h2 className="text-2xl font-bold text-foreground">Message History</h2>
+            <div className="bg-white border border-blue-100 rounded-xl shadow-sm">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-blue-100/60">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <Bell className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900">Message History</h3>
                     </div>
                     <button
                         onClick={fetchLogs}
-                        className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-500"
+                        className="p-1.5 rounded-md hover:bg-blue-50 hover:text-blue-600 transition text-gray-400"
                         title="Refresh"
                     >
-                        <RefreshCw className={`w-4 h-4 ${logsLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-4 h-4 md:w-4.5 md:h-4.5 ${logsLoading ? 'animate-spin text-blue-500' : ''}`} />
                     </button>
                 </div>
 
-                {/* Filter Tabs */}
-                <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-                    {(["all", "sent", "pending", "failed"] as FilterStatus[]).map((s) => (
-                        <button
-                            key={s}
-                            onClick={() => setFilterStatus(s)}
-                            className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${filterStatus === s ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                        >
-                            {s.charAt(0).toUpperCase() + s.slice(1)} ({countFor(s)})
-                        </button>
-                    ))}
-                </div>
-
-                {/* Messages List */}
-                {logsLoading ? (
-                    <div className="flex items-center justify-center py-10">
-                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="ml-3 text-sm text-gray-400">Loading messages…</span>
-                    </div>
-                ) : filteredLogs.length === 0 ? (
-                    <div className="text-center py-10">
-                        <Bell className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm text-gray-400">
-                            {logs.length === 0
-                                ? "No SMS messages sent yet. Messages will appear here after booking confirmations are sent."
-                                : "No messages match this filter."}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {filteredLogs.map((msg) => (
-                            <div key={msg.id} className="border border-border rounded-lg p-4 hover:bg-gray-50 transition">
-                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                    <div>
-                                        <h3 className="font-semibold text-foreground">
-                                            {msg.patient_name ?? "Unknown patient"}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground">{msg.patient_phone}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {statusBadge(msg.status)}
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                            {new Date(msg.sent_at).toLocaleString('en-PH', {
-                                                month: 'short', day: 'numeric',
-                                                hour: '2-digit', minute: '2-digit',
-                                            })}
-                                        </span>
-                                    </div>
-                                </div>
-                                {msg.content && (
-                                    <p className="text-sm text-foreground mb-2 line-clamp-2">{msg.content}</p>
-                                )}
-                                <span className="inline-block px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded font-medium">
-                                    {msg.message_type === "confirmation" ? "Booking Confirmation" : "Reminder"}
-                                </span>
-                            </div>
+                <div className="px-5 md:px-6 py-5 border-b border-blue-50/50">
+                    {/* Filter Tabs */}
+                    <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                        {(["all", "sent", "pending", "failed"] as FilterStatus[]).map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setFilterStatus(s)}
+                                className={`px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-sm rounded-lg font-semibold transition whitespace-nowrap border ${filterStatus === s 
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm" 
+                                    : "bg-white text-gray-600 border-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"}`}
+                            >
+                                {s.charAt(0).toUpperCase() + s.slice(1)} <span className="opacity-80 ml-0.5 font-medium">({countFor(s)})</span>
+                            </button>
                         ))}
                     </div>
-                )}
-            </Card>
+                </div>
+
+                <div className="px-5 md:px-6 py-4">
+                    {/* Messages List */}
+                    {logsLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <span className="ml-3 text-[10px] md:text-sm text-gray-400">Loading messages…</span>
+                        </div>
+                    ) : filteredLogs.length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                                <Bell className="w-5 h-5 text-blue-300" />
+                            </div>
+                            <p className="text-[10px] md:text-sm text-gray-400 max-w-sm mx-auto">
+                                {logs.length === 0
+                                    ? "No SMS messages sent yet. Messages will appear here after booking confirmations are sent."
+                                    : "No messages match this filter."}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 max-h-[400px] md:max-h-[500px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+                            {filteredLogs.map((msg) => (
+                                <div key={msg.id} className="border border-blue-50 rounded-xl p-4 bg-white hover:bg-blue-50/40 transition shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                                        <div>
+                                            <h3 className="text-xs md:text-sm font-bold text-gray-900">
+                                                {msg.patient_name ?? "Unknown patient"}
+                                            </h3>
+                                            <p className="text-[10px] md:text-xs font-semibold text-gray-500 mt-0.5">{msg.patient_phone}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {statusBadge(msg.status)}
+                                            <span className="text-[9px] md:text-xs font-semibold text-gray-400 whitespace-nowrap bg-gray-50 px-2 py-1 rounded-md border border-gray-100 shadow-sm">
+                                                {new Date(msg.sent_at).toLocaleString('en-PH', {
+                                                    month: 'short', day: 'numeric',
+                                                    hour: '2-digit', minute: '2-digit',
+                                                })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {msg.content && (
+                                        <p className="text-[10px] md:text-xs text-gray-700 mb-3 bg-gray-50 border border-gray-100 p-3 rounded-lg leading-relaxed shadow-sm font-medium">{msg.content}</p>
+                                    )}
+                                    <span className="inline-flex px-2 py-1 bg-blue-50 border border-blue-100 text-blue-700 text-[9px] md:text-xs rounded font-bold tracking-wide">
+                                        {msg.message_type === "confirmation" ? "Booking Confirmation" : "Reminder"}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

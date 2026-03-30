@@ -28,6 +28,12 @@ import { cn } from '@/lib/utils'
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([])
+    const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
+        const d = new Date()
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    })
+    const [selectedAppointments, setSelectedAppointments] = useState<Appointment[]>([])
+    const [loadingSelected, setLoadingSelected] = useState(false)
     const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
     const [upcomingWeekAppointments, setUpcomingWeekAppointments] = useState<Appointment[]>([])
     const [adminName, setAdminName] = useState('Admin')
@@ -42,18 +48,24 @@ export default function DashboardPage() {
                 const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
                 const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6)
 
-                const [statsRes, todayRes, upcomingRes, monthDates, weekAppts] = await Promise.all([
+                const dayOfWeek = now.getDay()
+                const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+                const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset)
+                const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+
+                const [statsRes, todayRes, upcomingRes, weekCalendarAppts, weekAppts] = await Promise.all([
                     getDashboardStats(),
                     getTodayAppointments(),
                     getUpcomingAppointments(10),
-                    getAppointmentDatesForMonth(now.getFullYear(), now.getMonth()),
+                    getAppointmentsForDateRange(toDateStr(monday), toDateStr(sunday)),
                     getAppointmentsForDateRange(toDateStr(now), toDateStr(weekEnd)),
                 ])
                 setStats(statsRes)
                 setTodayAppointments(todayRes)
+                setSelectedAppointments(todayRes)
                 setUpcomingAppointments(upcomingRes)
                 setUpcomingWeekAppointments(weekAppts)
-                setAppointmentDates(new Set(monthDates))
+                setAppointmentDates(new Set(weekCalendarAppts.map(a => a.appointment_date)))
 
                 const account = await getAccountInfo()
                 if (account?.displayName) setAdminName(account.displayName)
@@ -72,6 +84,20 @@ export default function DashboardPage() {
         if (hour < 12) return 'Good morning'
         if (hour < 18) return 'Good afternoon'
         return 'Good evening'
+    }
+
+    const handleDateClick = async (dateStr: string) => {
+        if (dateStr === selectedDateStr) return
+        setSelectedDateStr(dateStr)
+        setLoadingSelected(true)
+        try {
+            const appts = await getAppointmentsForDateRange(dateStr, dateStr)
+            setSelectedAppointments(appts)
+        } catch (error) {
+            console.error('Error fetching appointments for date:', error)
+        } finally {
+            setLoadingSelected(false)
+        }
     }
 
     // ── Upcoming week summary ──
@@ -151,9 +177,8 @@ export default function DashboardPage() {
                     <Link href="/patient-booking"
                         target="_blank"
                         rel="noopener noreferrer" className="flex-1">
-                        <Button
-                            className="w-full h-9 md:h-10 rounded-xl bg-blue-500 hover:bg-blue-700 text-white font-semibold transition-all text-xs md:text-sm"
-                        >
+
+                        <Button variant="primary" className='w-full h-9 md:h-10'>
                             <CalendarPlus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
                             <span className="hidden sm:inline">Book for Walk-in</span>
                             <span className="sm:hidden">Book for Walk-in</span>
@@ -379,38 +404,51 @@ export default function DashboardPage() {
                     <div className="flex-shrink-0 p-4 md:p-5 pb-3 md:pb-4 border-b border-gray-100">
                         <div className="flex items-center justify-center mb-3 md:mb-4">
                             <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
-                                {today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                {(() => {
+                                    const [y, m, d] = selectedDateStr.split('-').map(Number)
+                                    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                                })()}
                             </div>
                         </div>
 
                         {/* Week row */}
                         <div className="grid grid-cols-7 gap-1">
                             {weekCells.map((cell) => {
-                                const isToday = cell.dateStr === todayStr
+                                const isTodayNode = cell.dateStr === todayStr
+                                const isSelected = cell.dateStr === selectedDateStr
                                 const hasAppointment = appointmentDates.has(cell.dateStr)
 
                                 return (
-                                    <div key={cell.dateStr} className="flex flex-col items-center py-1">
+                                    <button 
+                                        key={cell.dateStr} 
+                                        onClick={() => handleDateClick(cell.dateStr)}
+                                        className="flex flex-col items-center py-1 cursor-pointer focus:outline-none group rounded-md hover:bg-gray-50/50 transition-colors"
+                                    >
                                         <span className={cn(
                                             "text-[9px] font-medium mb-1",
-                                            isToday ? "text-blue-600" : "text-gray-400"
+                                            isSelected ? "text-blue-600" : "text-gray-400"
                                         )}>
                                             {cell.dayLabel}
                                         </span>
                                         <div className={cn(
-                                            "w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-medium rounded-full select-none transition-colors",
-                                            isToday
-                                                ? "bg-blue-600 text-white font-semibold"
-                                                : "text-gray-500 hover:bg-gray-50"
+                                            "w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-medium rounded-full transition-colors",
+                                            isSelected
+                                                ? "bg-blue-600 text-white font-semibold shadow-sm"
+                                                : isTodayNode
+                                                    ? "bg-blue-100 text-blue-700 font-semibold"
+                                                    : "text-gray-500 group-hover:bg-gray-100"
                                         )}>
                                             {cell.day}
                                         </div>
                                         <div className="h-1 flex items-center justify-center mt-0.5">
-                                            {hasAppointment && !isToday && (
-                                                <div className="w-1 h-1 rounded-full bg-blue-400" />
+                                            {hasAppointment && (
+                                                <div className={cn(
+                                                    "w-1 h-1 rounded-full",
+                                                    isSelected ? "bg-blue-200" : "bg-blue-400"
+                                                )} />
                                             )}
                                         </div>
-                                    </div>
+                                    </button>
                                 )
                             })}
                         </div>
@@ -426,28 +464,35 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Today's Timeline - Shows ALL appointments */}
+                    {/* Selected Date's Timeline */}
                     <div className="flex-1 min-h-0 flex flex-col p-4 md:p-5 pt-3 md:pt-4">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-sm md:text-base font-semibold text-gray-900">
-                                    {today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                    {(() => {
+                                        const [y, m, d] = selectedDateStr.split('-').map(Number)
+                                        return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                                    })()}
                                 </h3>
 
                             </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto">
-                            {todayAppointments.length === 0 ? (
+                            {loadingSelected ? (
+                                <div className="h-full flex flex-col items-center justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3" />
+                                    <p className="text-sm font-medium text-gray-400">Loading appointments...</p>
+                                </div>
+                            ) : selectedAppointments.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center py-8">
-                                    <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                                        <Clock className="w-5 h-5 text-gray-300" />
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-400">No appointments today</p>
+                                    <p className="text-sm font-medium text-gray-400">
+                                        {selectedDateStr === todayStr ? 'No appointments today' : 'No appointments for this day'}
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    {todayAppointments.map((apt, index) => {
+                                    {selectedAppointments.map((apt, index) => {
                                         // Alternating blue shades for visual distinction
                                         const isEven = index % 2 === 0
                                         const bgColor = isEven ? "bg-blue-50" : "bg-slate-50"

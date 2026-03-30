@@ -18,6 +18,7 @@ import {
 import type { Appointment } from '@/types/appointment'
 import type { UnavailableSlot } from '@/lib/supabase/appointmentService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
+import { Button } from '@/components/ui/button'
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -269,9 +270,9 @@ export default function AppointmentsPage() {
                         href="/patient-booking"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-400 text-white text-xs font-medium rounded-lg hover:bg-blue-500 active:scale-[0.97] transition shadow-sm"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 text-white text-xs font-medium rounded-xl hover:bg-blue-600 active:scale-[0.97]"
                     >
-                        <span>Book</span>
+                        <span>Book Appointment</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                 </div>
@@ -333,6 +334,7 @@ export default function AppointmentsPage() {
             {showAvailabilityModal && (
                 <AvailabilityModal
                     date={selectedDate}
+                    appointments={dayAppointments}
                     unavailableSlots={unavailableSlots}
                     onClose={() => {
                         setShowAvailabilityModal(false)
@@ -457,9 +459,10 @@ function CalendarView({
                                     <div className={`text-md md:text-lg font-semibold leading-none ${isToday && !isSelected ? 'text-blue-600' : ''}`}>
                                         {date.getDate()}
                                     </div>
+
                                     {count > 0 && (
                                         <div className={`text-[7px] sm:text-[9px] mt-0.5 leading-normal truncate w-full px-0.5 pb-px text-center ${isSelected ? 'text-blue-100' : isUnavailable ? 'text-red-300' : 'text-blue-500'}`}>
-                                            {count} bookings
+                                            {count} {count === 1 ? 'booking' : 'bookings'}
                                         </div>
                                     )}
                                 </button>
@@ -495,7 +498,10 @@ function CalendarView({
                             <p className="text-sm text-red-500 font-medium">Day marked unavailable</p>
                         </div>
                     ) : dayAppointments.length === 0 ? (
-                        <p className="text-sm text-gray-400">No appointments for this day.</p>
+                        <div className="h-full flex flex-col items-center justify-center text-center py-8">
+
+                            <p className="text-sm font-medium text-gray-400">No appointments today</p>
+                        </div>
                     ) : (
                         <div className="space-y-2">
                             {dayAppointments.map((appt) => (
@@ -566,17 +572,24 @@ function DayView({
     const apptByTime: Record<string, Appointment> = {}
     appointments.forEach((a) => { apptByTime[a.appointment_time] = a })
 
+    const hasBookings = appointments.length > 0
+    const canMarkUnavailable = !hasBookings || isDayUnavailable
+
     return (
         <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
             <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-100">
                 <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
-                <button
+                <Button
                     onClick={onMakeDayUnavailable}
-                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition ${isDayUnavailable ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50'}`}
+                    disabled={!canMarkUnavailable}
+                    title={!canMarkUnavailable ? 'Cannot mark day unavailable while there are bookings' : ''}
+                    variant={isDayUnavailable ? 'outline' : 'destructive'}
+                    size="sm"
+                    className={isDayUnavailable ? 'text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 bg-white' : ''}
                 >
                     {isDayUnavailable ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    {isDayUnavailable ? 'Make Available' : 'Make Unavailable'}
-                </button>
+                    {isDayUnavailable ? 'Mark Available' : 'Mark Unavailable'}
+                </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -757,10 +770,12 @@ function WeekView({
 
 function AvailabilityModal({
     date,
+    appointments,
     unavailableSlots: initialSlots,
     onClose,
 }: {
     date: Date
+    appointments: Appointment[]
     unavailableSlots: UnavailableSlot[]
     onClose: () => void
 }) {
@@ -773,7 +788,15 @@ function AvailabilityModal({
 
     const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
+    const hasBookings = appointments.length > 0
+    const canMarkDayUnavailable = !hasBookings || isDayUnavailable
+
     const handleMarkDayUnavailable = async () => {
+        if (!canMarkDayUnavailable) {
+            toast.error('Cannot mark day unavailable while there are bookings. Please remove all appointments first.')
+            return
+        }
+
         setSaving('day')
         if (isDayUnavailable) {
             await removeSlotUnavailable(dateStr)
@@ -786,6 +809,15 @@ function AvailabilityModal({
     }
 
     const handleToggleSlot = async (time: string) => {
+        // Check if there's an appointment at this time
+        const hasAppointmentAtTime = appointments.some(a => a.appointment_time === time)
+        const isMarkingUnavailable = !unavailableSet.has(time)
+
+        if (isMarkingUnavailable && hasAppointmentAtTime) {
+            toast.error('Cannot mark time slot unavailable while there is a booking. Please remove the appointment first.')
+            return
+        }
+
         setSaving(time)
         if (unavailableSet.has(time)) {
             await removeSlotUnavailable(dateStr, time)
@@ -810,14 +842,23 @@ function AvailabilityModal({
                 <div className="px-6 py-5 overflow-y-auto flex-1">
                     <button
                         onClick={handleMarkDayUnavailable}
-                        disabled={saving === 'day'}
+                        disabled={saving === 'day' || !canMarkDayUnavailable}
+                        title={!canMarkDayUnavailable ? 'Cannot mark day unavailable while there are bookings' : ''}
                         className={`w-full py-3 rounded-lg text-sm font-semibold transition mb-6 ${isDayUnavailable
                             ? 'bg-green-500 hover:bg-green-600 text-white'
                             : 'bg-red-500 hover:bg-red-600 text-white'
-                            } disabled:opacity-50`}
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {saving === 'day' ? 'Saving…' : isDayUnavailable ? 'Mark Day as Available' : 'Mark Entire Day as Unavailable'}
                     </button>
+
+                    {hasBookings && !isDayUnavailable && (
+                        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-xs text-amber-700">
+                                ⚠️ This day has {appointments.length} booking{appointments.length > 1 ? 's' : ''}. Remove all appointments before marking the day unavailable.
+                            </p>
+                        </div>
+                    )}
 
                     <hr className="border-gray-100 mb-5" />
 
@@ -827,17 +868,26 @@ function AvailabilityModal({
                         {ALL_TIME_SLOTS.map((time) => {
                             const isUnavail = unavailableSet.has(time)
                             const isSaving = saving === time
+                            const hasAppointmentAtTime = appointments.some(a => a.appointment_time === time)
 
                             return (
                                 <div key={time} className="flex items-center justify-between px-4 py-3 border border-gray-100 rounded-lg">
-                                    <span className="text-sm font-medium text-gray-700">{time}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-700">{time}</span>
+                                        {hasAppointmentAtTime && (
+                                            <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full font-medium">
+                                                Booked
+                                            </span>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => handleToggleSlot(time)}
                                         disabled={isSaving || isDayUnavailable}
+                                        title={hasAppointmentAtTime && !isUnavail ? 'Cannot mark unavailable while there is a booking' : ''}
                                         className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition ${isUnavail
                                             ? 'bg-green-500 hover:bg-green-600 text-white'
                                             : 'bg-red-500 hover:bg-red-600 text-white'
-                                            } disabled:opacity-50`}
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         {isSaving ? 'Saving…' : isUnavail ? 'Mark Available' : 'Mark Unavailable'}
                                     </button>

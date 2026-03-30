@@ -56,14 +56,14 @@ function ClinicInfoCard() {
     return (
         <div className="space-y-5">
             <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Clinic Contact</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Modern Dentistry Clinic</h3>
             </div>
 
             <div className="flex gap-3">
                 <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-gray-700 mb-0.5">Address</p>
-                    <p className="text-sm text-gray-600">123 Sample Street, Quezon City</p>
+                    <p className="text-sm text-gray-600">Boac, Marinduque</p>
                 </div>
             </div>
 

@@ -6,6 +6,7 @@ import { getPatients, createPatient, deletePatient } from '@/lib/supabase/patien
 import { Search, Plus, Eye, Trash2, ArrowUp, ArrowDown, ArrowRight } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import AddPatientModal from '@/components/AddPatientModal'
 import DeletePatientModal from '@/components/DeletePatientModal'
 
@@ -152,13 +153,14 @@ export default function PatientsPage() {
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-                <button
+                <Button
                     onClick={openAddModal}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition"
+                    variant="primary"
+                    className='h-9 md:h-10'
                 >
                     <Plus className="w-4 h-4" />
                     Add Patient
-                </button>
+                </Button>
             </div>
 
             {/* Patients Table */}
