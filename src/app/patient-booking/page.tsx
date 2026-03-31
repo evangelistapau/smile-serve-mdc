@@ -493,14 +493,14 @@ function BookingFormModal({
                 weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
             })
 
-            sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
-                console.error('SMS send error (non-blocking):', err)
-            )
+            // sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
+            //     console.error('SMS send error (non-blocking):', err)
+            // )
 
-            // // Schedule reminder SMS 
-            sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
-                console.error('Reminder SMS scheduling error (non-blocking):', err)
-            )
+            // // // Schedule reminder SMS 
+            // sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
+            //     console.error('Reminder SMS scheduling error (non-blocking):', err)
+            // )
 
             if (email) {
                 fetch('/api/send-confirmation', {
