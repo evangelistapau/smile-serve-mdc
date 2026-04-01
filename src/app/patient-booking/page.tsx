@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, X, MapPin, Phone, Mail } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, MapPin, Phone, Mail, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
 import {
     getBookedTimeSlots,
@@ -63,16 +63,26 @@ function ClinicInfoCard() {
                 <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-gray-700 mb-0.5">Address</p>
-                    <p className="text-sm text-gray-600">Boac, Marinduque</p>
+                    <p className="text-sm text-gray-600">San Miguel,Boac, Marinduque</p>
+                </div>
+            </div>
+
+            <div className="flex gap-3">
+                <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-0.5">Mobile Number</p>
+                    <a href="tel:09298218291" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        09298218291
+                    </a>
                 </div>
             </div>
 
             <div className="flex gap-3">
                 <Phone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-0.5">Phone</p>
-                    <a href="tel:09151234567" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                        0915-123-4567
+                    <p className="text-sm font-semibold text-gray-700 mb-0.5">Telephone</p>
+                    <a href="tel:0423321554" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        042-7541389
                     </a>
                 </div>
             </div>
