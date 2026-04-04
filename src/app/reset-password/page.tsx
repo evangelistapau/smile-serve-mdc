@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function ResetPassword() {
     const router = useRouter()
@@ -64,14 +65,19 @@ export default function ResetPassword() {
 
         setLoading(true)
 
-        const { error } = await supabase.auth.updateUser({ password })
+        try {
+            const { error } = await supabase.auth.updateUser({ password })
 
-        setLoading(false)
+            setLoading(false)
 
-        if (error) {
-            setError(error.message)
-        } else {
-            setSuccess(true)
+            if (error) {
+                setError(error.message)
+            } else {
+                setSuccess(true)
+            }
+        } catch (err) {
+            setLoading(false)
+            toast.error('Network error. Please check your internet connection and try again.')
         }
     }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Appointment } from '@/types/appointment'
 import {
     getDashboardStats,
@@ -72,6 +73,7 @@ export default function DashboardPage() {
                 else if (account?.email) setAdminName(account.email.split('@')[0])
             } catch (error) {
                 console.error('Error fetching dashboard data:', error)
+                toast.error('Network error. Could not load dashboard data.')
             } finally {
                 setLoading(false)
             }
@@ -95,6 +97,7 @@ export default function DashboardPage() {
             setSelectedAppointments(appts)
         } catch (error) {
             console.error('Error fetching appointments for date:', error)
+            toast.error('Network error. Could not load appointments for this date.')
         } finally {
             setLoadingSelected(false)
         }

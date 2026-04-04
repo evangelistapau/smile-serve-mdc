@@ -79,8 +79,16 @@ export default function PatientDetailsPage() {
 
     useEffect(() => {
         if (patientUuid) {
-            fetchPatient(patientUuid)
-            fetchHistory(patientUuid)
+            async function loadAll() {
+                const results = await Promise.allSettled([
+                    fetchPatient(patientUuid!),
+                    fetchHistory(patientUuid!),
+                ])
+                if (results.some(r => r.status === 'rejected')) {
+                    toast.error('Network error. Could not load patient data.')
+                }
+            }
+            loadAll()
         }
     }, [patientUuid])
 
@@ -131,27 +139,31 @@ export default function PatientDetailsPage() {
         if (!patient?.id) return
         setSaving(true)
 
-        const { data, error } = await updatePatient(patient.id, {
-            first_name: editData.first_name,
-            middle_name: editData.middle_name,
-            last_name: editData.last_name,
-            phone: editData.phone || undefined,
-            email: editData.email || undefined,
-            age: editData.age === '' ? undefined : editData.age,
-            gender: editData.gender || undefined,
-            marital_status: editData.marital_status || undefined,
-            address: editData.address || undefined,
-            occupation: editData.occupation || undefined,
-        })
+        try {
+            const { data, error } = await updatePatient(patient.id, {
+                first_name: editData.first_name,
+                middle_name: editData.middle_name,
+                last_name: editData.last_name,
+                phone: editData.phone || undefined,
+                email: editData.email || undefined,
+                age: editData.age === '' ? undefined : editData.age,
+                gender: editData.gender || undefined,
+                marital_status: editData.marital_status || undefined,
+                address: editData.address || undefined,
+                occupation: editData.occupation || undefined,
+            })
+
+            if (error) {
+                setError(error)
+            } else {
+                setPatient(data)
+                setIsEditing(false)
+            }
+        } catch (err) {
+            toast.error('Network error. Could not save patient details.')
+        }
 
         setSaving(false)
-
-        if (error) {
-            setError(error)
-        } else {
-            setPatient(data)
-            setIsEditing(false)
-        }
     }
 
     const handleDelete = () => {
@@ -162,14 +174,19 @@ export default function PatientDetailsPage() {
     const handleConfirmDelete = async () => {
         if (!patient?.id) return
         setDeleting(true)
-        const { error } = await deletePatient(patient.id)
-        setDeleting(false)
-        if (error) {
-            toast.error('Failed to delete patient. Please try again.')
-        } else {
-            toast.success('Patient deleted successfully.')
-            setShowDeleteModal(false)
-            router.push('/patients')
+        try {
+            const { error } = await deletePatient(patient.id)
+            setDeleting(false)
+            if (error) {
+                toast.error('Failed to delete patient. Please try again.')
+            } else {
+                toast.success('Patient deleted successfully.')
+                setShowDeleteModal(false)
+                router.push('/patients')
+            }
+        } catch (err) {
+            setDeleting(false)
+            toast.error('Network error. Could not delete patient.')
         }
     }
 
@@ -248,14 +265,19 @@ export default function PatientDetailsPage() {
     const executeDeleteHistory = async () => {
         if (!historyToDelete) return
         setDeletingHistory(true)
-        const { error } = await deletePatientHistory(historyToDelete)
-        setDeletingHistory(false)
-        if (error) {
-            toast.error('Failed to delete history. Please try again.')
-        } else {
-            toast.success('History deleted successfully.')
-            setHistory(prev => prev.filter(h => h.id !== historyToDelete))
-            setHistoryToDelete(null)
+        try {
+            const { error } = await deletePatientHistory(historyToDelete)
+            setDeletingHistory(false)
+            if (error) {
+                toast.error('Failed to delete history. Please try again.')
+            } else {
+                toast.success('History deleted successfully.')
+                setHistory(prev => prev.filter(h => h.id !== historyToDelete))
+                setHistoryToDelete(null)
+            }
+        } catch (err) {
+            setDeletingHistory(false)
+            toast.error('Network error. Could not delete history entry.')
         }
     }
 

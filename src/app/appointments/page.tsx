@@ -102,47 +102,62 @@ export default function AppointmentsPage() {
 
     const loadDayData = useCallback(async () => {
         setLoading(true)
-        const [appts, unavail] = await Promise.all([
-            getAppointmentsForDate(dateStr),
-            getUnavailableSlots(dateStr),
-        ])
-        setDayAppointments(appts)
-        setUnavailableSlots(unavail)
-        setLoading(false)
+        try {
+            const [appts, unavail] = await Promise.all([
+                getAppointmentsForDate(dateStr),
+                getUnavailableSlots(dateStr),
+            ])
+            setDayAppointments(appts)
+            setUnavailableSlots(unavail)
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
     }, [dateStr])
 
-    useEffect(() => { loadDayData() }, [loadDayData])
-
-    const loadMonthData = useCallback(() => {
+    const loadMonthData = useCallback(async () => {
         const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
         const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
         const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '00')}-${String(lastDay).padStart(2, '0')}`
-        getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
-        getUnavailableSlotsForRange(startDate, endDate).then(setMonthUnavailable)
+        const [appts, unavail] = await Promise.all([
+            getAppointmentsForDateRange(startDate, endDate),
+            getUnavailableSlotsForRange(startDate, endDate),
+        ])
+        setMonthAppointments(appts)
+        setMonthUnavailable(unavail)
     }, [calYear, calMonth])
 
-    useEffect(() => { loadMonthData() }, [loadMonthData])
-
-    const loadWeekData = useCallback(() => {
+    const loadWeekData = useCallback(async () => {
         if (viewMode !== 'week') return
         const dates = getWeekDates(selectedDate)
         const startDate = toDateStr(dates[0])
         const endDate = toDateStr(dates[6])
-        Promise.all([
+        const [appts, unavail] = await Promise.all([
             getAppointmentsForDateRange(startDate, endDate),
             getUnavailableSlotsForRange(startDate, endDate),
-        ]).then(([appts, unavail]) => {
-            setWeekAppointments(appts)
-            setWeekUnavailable(unavail)
-        })
+        ])
+        setWeekAppointments(appts)
+        setWeekUnavailable(unavail)
     }, [viewMode, selectedDate])
 
-    useEffect(() => { loadWeekData() }, [loadWeekData])
+    // Initial load — consolidated error
+    useEffect(() => {
+        async function loadAll() {
+            const results = await Promise.allSettled([
+                loadDayData(),
+                loadMonthData(),
+                loadWeekData(),
+            ])
+            if (results.some(r => r.status === 'rejected')) {
+                toast.error('Network error. Could not load appointment data.')
+            }
+        }
+        loadAll()
+    }, [loadDayData, loadMonthData, loadWeekData])
 
     const handleRealtimeUpdate = useCallback(() => {
-        loadDayData()
-        loadMonthData()
-        loadWeekData()
+        Promise.allSettled([loadDayData(), loadMonthData(), loadWeekData()])
     }, [loadDayData, loadMonthData, loadWeekData])
 
     useRealtimeAppointments(handleRealtimeUpdate)
@@ -183,20 +198,24 @@ export default function AppointmentsPage() {
 
     const confirmDelete = async () => {
         if (!appointmentToDelete) return
-        const success = await deleteAppointment(appointmentToDelete)
-        if (success) {
-            toast.success('Appointment deleted successfully.')
-            loadDayData()
-            const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
-            const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
-            const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-            getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
-            if (viewMode === 'week') {
-                const dates = getWeekDates(selectedDate)
-                getAppointmentsForDateRange(toDateStr(dates[0]), toDateStr(dates[6])).then(setWeekAppointments)
+        try {
+            const success = await deleteAppointment(appointmentToDelete)
+            if (success) {
+                toast.success('Appointment deleted successfully.')
+                loadDayData()
+                const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
+                const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
+                const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+                getAppointmentsForDateRange(startDate, endDate).then(setMonthAppointments)
+                if (viewMode === 'week') {
+                    const dates = getWeekDates(selectedDate)
+                    getAppointmentsForDateRange(toDateStr(dates[0]), toDateStr(dates[6])).then(setWeekAppointments)
+                }
+            } else {
+                toast.error('Failed to delete appointment. Please try again.')
             }
-        } else {
-            toast.error('Failed to delete appointment. Please try again.')
+        } catch (err) {
+            toast.error('Network error. Could not delete appointment.')
         }
         setAppointmentToDelete(null)
     }

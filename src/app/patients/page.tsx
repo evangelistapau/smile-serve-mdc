@@ -35,11 +35,15 @@ export default function PatientsPage() {
 
     const fetchPatients = async () => {
         setPatientsLoading(true)
-        const { data, error } = await getPatients()
-        if (error) {
-            setError(error)
-        } else {
-            setPatients(data || [])
+        try {
+            const { data, error } = await getPatients()
+            if (error) {
+                setError(error)
+            } else {
+                setPatients(data || [])
+            }
+        } catch (err) {
+            toast.error('Network error. Could not load patients.')
         }
         setPatientsLoading(false)
     }
@@ -54,12 +58,16 @@ export default function PatientsPage() {
 
     const handleSubmit = async (patientData: Omit<Patient, 'id' | 'patient_id' | 'created_at'>) => {
         setSubmitting(true)
-        const { error } = await createPatient(patientData)
-        if (error) {
-            setError(error)
-        } else {
-            closeModal()
-            fetchPatients()
+        try {
+            const { error } = await createPatient(patientData)
+            if (error) {
+                setError(error)
+            } else {
+                closeModal()
+                fetchPatients()
+            }
+        } catch (err) {
+            toast.error('Network error. Could not add patient.')
         }
         setSubmitting(false)
     }
@@ -73,15 +81,20 @@ export default function PatientsPage() {
     const handleConfirmDelete = async () => {
         if (!pendingDeleteId) return
         setDeleting(true)
-        const { error } = await deletePatient(pendingDeleteId)
-        setDeleting(false)
-        if (error) {
-            toast.error('Failed to delete patient. Please try again.')
-        } else {
-            toast.success('Patient deleted successfully.')
-            setPendingDeleteId(null)
-            setPendingDeleteName('')
-            fetchPatients()
+        try {
+            const { error } = await deletePatient(pendingDeleteId)
+            setDeleting(false)
+            if (error) {
+                toast.error('Failed to delete patient. Please try again.')
+            } else {
+                toast.success('Patient deleted successfully.')
+                setPendingDeleteId(null)
+                setPendingDeleteName('')
+                fetchPatients()
+            }
+        } catch (err) {
+            setDeleting(false)
+            toast.error('Network error. Could not delete patient.')
         }
     }
 

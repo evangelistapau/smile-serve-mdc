@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { User, Lock, Pencil, Check, X, History, Mail, Database } from 'lucide-react'
 import {
     getAccountInfo,
@@ -36,22 +37,32 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
-        getAccountInfo().then((info) => {
-            setAccount(info)
+        async function loadAll() {
+            const [accountRes, historyRes, brevoRes, dbRes] = await Promise.allSettled([
+                getAccountInfo(),
+                getLoginHistory(),
+                getBrevoEmailLimit(),
+                getDbSize(),
+            ])
+
+            if (accountRes.status === 'fulfilled') setAccount(accountRes.value)
             setLoadingAccount(false)
-        })
-        getLoginHistory().then((entries) => {
-            setLoginHistory(entries)
+
+            if (historyRes.status === 'fulfilled') setLoginHistory(historyRes.value)
             setLoadingHistory(false)
-        })
-        getBrevoEmailLimit().then((limit) => {
-            setBrevo(limit)
+
+            if (brevoRes.status === 'fulfilled') setBrevo(brevoRes.value)
             setLoadingBrevo(false)
-        })
-        getDbSize().then((size) => {
-            setDbSize(size)
+
+            if (dbRes.status === 'fulfilled') setDbSize(dbRes.value)
             setLoadingDbSize(false)
-        })
+
+            const hasFailure = [accountRes, historyRes, brevoRes, dbRes].some(r => r.status === 'rejected')
+            if (hasFailure) {
+                toast.error('Network error. Some settings could not be loaded.')
+            }
+        }
+        loadAll()
     }, [])
 
     const handleEditStart = () => {
@@ -67,9 +78,13 @@ export default function SettingsPage() {
     const handleEditSave = async () => {
         if (!editName.trim()) return
         setSaving(true)
-        const success = await updateDisplayName(editName.trim())
-        if (success && account) {
-            setAccount({ ...account, displayName: editName.trim() })
+        try {
+            const success = await updateDisplayName(editName.trim())
+            if (success && account) {
+                setAccount({ ...account, displayName: editName.trim() })
+            }
+        } catch (err) {
+            toast.error('Network error. Could not update display name.')
         }
         setSaving(false)
         setEditing(false)

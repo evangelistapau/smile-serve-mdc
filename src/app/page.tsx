@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase/client'
 import { recordLogin } from '../lib/supabase/settingsService'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export default function Home() {
   const router = useRouter()
@@ -26,18 +27,23 @@ export default function Home() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    setLoading(false)
+      setLoading(false)
 
-    if (error) {
-      setError(error.message)
-    } else {
-      await recordLogin()
-      router.push('/dashboard')
+      if (error) {
+        setError(error.message)
+      } else {
+        await recordLogin()
+        router.push('/dashboard')
+      }
+    } catch (err) {
+      setLoading(false)
+      toast.error('Network error. Please check your internet connection and try again.')
     }
   }
 
@@ -47,16 +53,21 @@ export default function Home() {
     setResetMessage(null)
     setResetError(null)
 
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
 
-    setResetLoading(false)
+      setResetLoading(false)
 
-    if (error) {
-      setResetError(error.message)
-    } else {
-      setResetMessage('Password reset instructions have been sent to your email.')
+      if (error) {
+        setResetError(error.message)
+      } else {
+        setResetMessage('Password reset instructions have been sent to your email.')
+      }
+    } catch (err) {
+      setResetLoading(false)
+      toast.error('Network error. Please check your internet connection and try again.')
     }
   }
 

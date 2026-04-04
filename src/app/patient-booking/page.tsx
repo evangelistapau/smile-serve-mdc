@@ -149,7 +149,9 @@ export default function PatientBookingPage() {
         setBookedSlots([])
         setUnavailSlots([])
         setIsDayBlocked(false)
-        loadSlots()
+        loadSlots().catch(() => {
+            setLoadingSlots(false)
+        })
     }, [loadSlots])
 
     const loadMonthData = useCallback(async () => {
@@ -172,11 +174,22 @@ export default function PatientBookingPage() {
         setFullyBookedDates(fullyBooked)
     }, [calYear, calMonth])
 
-    useEffect(() => { loadMonthData() }, [loadMonthData])
+    useEffect(() => { loadMonthData().catch(() => {}) }, [loadMonthData])
+
+    // Show one consolidated toast on initial load if either fails
+    useEffect(() => {
+        async function initialLoad() {
+            const results = await Promise.allSettled([loadSlots(), loadMonthData()])
+            if (results.some(r => r.status === 'rejected')) {
+                toast.error('Network error. Could not load booking data.')
+            }
+        }
+        initialLoad()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const handleRealtimeUpdate = useCallback(() => {
-        loadSlots()
-        loadMonthData()
+        Promise.allSettled([loadSlots(), loadMonthData()])
     }, [loadSlots, loadMonthData])
 
     useRealtimeAppointments(handleRealtimeUpdate)
@@ -503,14 +516,14 @@ function BookingFormModal({
                 weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
             })
 
-            // sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
-            //     console.error('SMS send error (non-blocking):', err)
-            // )
+            sendBookingConfirmationSms(name, phone, readableDate, selectedTime).catch((err) =>
+                console.error('SMS send error (non-blocking):', err)
+            )
 
-            // // // Schedule reminder SMS 
-            // sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
-            //     console.error('Reminder SMS scheduling error (non-blocking):', err)
-            // )
+            // // Schedule reminder SMS 
+            sendBookingReminderSms(name, phone, readableDate, selectedTime, dateStr).catch((err) =>
+                console.error('Reminder SMS scheduling error (non-blocking):', err)
+            )
 
             if (email) {
                 fetch('/api/send-confirmation', {

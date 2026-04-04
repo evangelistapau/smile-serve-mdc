@@ -23,27 +23,38 @@ export default function SmsSettingsPage() {
     const [logsLoading, setLogsLoading] = useState(true)
     const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
 
-    // ─── Load settings ────────────────────────────────────────
-    useEffect(() => {
-        async function load() {
-            const settings = await getSmsSettings()
-            setSmsSettings(settings)
-            setLoading(false)
-        }
-        load()
-    }, [])
-
-    // ─── Load SMS logs ────────────────────────────────────────
+    // ─── Load settings & logs on mount ─────────────────────────
     const fetchLogs = useCallback(async () => {
         setLogsLoading(true)
-        const data = await getSmsLogs(100)
-        setLogs(data)
+        try {
+            const data = await getSmsLogs(100)
+            setLogs(data)
+        } catch (err) {
+            // Silently fail for refresh/realtime — initial load error handled below
+        }
         setLogsLoading(false)
     }, [])
 
     useEffect(() => {
-        fetchLogs()
-    }, [fetchLogs])
+        async function loadAll() {
+            const [settingsRes, logsRes] = await Promise.allSettled([
+                getSmsSettings(),
+                getSmsLogs(100),
+            ])
+
+            if (settingsRes.status === 'fulfilled') setSmsSettings(settingsRes.value)
+            setLoading(false)
+
+            if (logsRes.status === 'fulfilled') setLogs(logsRes.value)
+            setLogsLoading(false)
+
+            const hasFailure = [settingsRes, logsRes].some(r => r.status === 'rejected')
+            if (hasFailure) {
+                toast.error('Network error. Some SMS data could not be loaded.')
+            }
+        }
+        loadAll()
+    }, [])
 
     // ─── Realtime subscription on sms_logs ───────────────────
     useEffect(() => {
@@ -74,12 +85,17 @@ export default function SmsSettingsPage() {
 
     const handleSave = async () => {
         setSaving(true)
-        const success = await saveSmsSettings(smsSettings)
-        setSaving(false)
-        if (success) {
-            toast.success("SMS settings saved successfully")
-        } else {
-            toast.error("Failed to save SMS settings")
+        try {
+            const success = await saveSmsSettings(smsSettings)
+            setSaving(false)
+            if (success) {
+                toast.success("SMS settings saved successfully")
+            } else {
+                toast.error("Failed to save SMS settings")
+            }
+        } catch (err) {
+            setSaving(false)
+            toast.error('Network error. Could not save SMS settings.')
         }
     }
 
