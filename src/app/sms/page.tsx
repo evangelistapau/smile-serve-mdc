@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Bell, RefreshCw } from "lucide-react"
@@ -16,6 +16,7 @@ export default function SmsSettingsPage() {
         confirmedBookingMessage: "",
         reminderMessage: "",
     })
+    const originalSettings = useRef(smsSettings)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
@@ -42,7 +43,10 @@ export default function SmsSettingsPage() {
                 getSmsLogs(100),
             ])
 
-            if (settingsRes.status === 'fulfilled') setSmsSettings(settingsRes.value)
+            if (settingsRes.status === 'fulfilled') {
+                setSmsSettings(settingsRes.value)
+                originalSettings.current = settingsRes.value
+            }
             setLoading(false)
 
             if (logsRes.status === 'fulfilled') setLogs(logsRes.value)
@@ -83,12 +87,18 @@ export default function SmsSettingsPage() {
         setSmsSettings((prev) => ({ ...prev, [field]: value }))
     }
 
+    const hasChanges =
+        smsSettings.senderNumber !== originalSettings.current.senderNumber ||
+        smsSettings.confirmedBookingMessage !== originalSettings.current.confirmedBookingMessage ||
+        smsSettings.reminderMessage !== originalSettings.current.reminderMessage
+
     const handleSave = async () => {
         setSaving(true)
         try {
             const success = await saveSmsSettings(smsSettings)
             setSaving(false)
             if (success) {
+                originalSettings.current = { ...smsSettings }
                 toast.success("SMS settings saved successfully")
             } else {
                 toast.error("Failed to save SMS settings")
@@ -179,7 +189,7 @@ export default function SmsSettingsPage() {
                     </div>
 
                     <div className="border-t border-blue-50 pt-6">
-                        <Button onClick={handleSave} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-10 text-[10px] md:text-sm font-semibold shadow-sm transition">
+                        <Button onClick={handleSave} disabled={saving || !hasChanges} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-10 text-[10px] md:text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
                             {saving ? "Saving..." : "Save SMS Settings"}
                         </Button>
                     </div>
