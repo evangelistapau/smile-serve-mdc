@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { Bell, RefreshCw } from "lucide-react"
 import { getSmsSettings, saveSmsSettings, getSmsLogs, SmsLog } from "@/lib/supabase/smsService"
 import { supabase } from "@/lib/supabase/client"
@@ -124,12 +125,7 @@ export default function SmsSettingsPage() {
     }
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                <span className="ml-3 text-sm text-gray-400">Loading SMS settings…</span>
-            </div>
-        )
+        return <LoadingSpinner fullPage message="Loading SMS settings…" />
     }
 
     return (
@@ -234,10 +230,7 @@ export default function SmsSettingsPage() {
                 <div className="px-5 md:px-6 py-4">
                     {/* Messages List */}
                     {logsLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="ml-3 text-[10px] md:text-sm text-gray-400">Loading messages…</span>
-                        </div>
+                        <LoadingSpinner message="Loading messages\u2026" />
                     ) : filteredLogs.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">

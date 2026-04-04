@@ -19,6 +19,7 @@ import type { Appointment } from '@/types/appointment'
 import type { UnavailableSlot } from '@/lib/supabase/appointmentService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ export default function AppointmentsPage() {
     const [weekUnavailable, setWeekUnavailable] = useState<UnavailableSlot[]>([])
     const [monthUnavailable, setMonthUnavailable] = useState<UnavailableSlot[]>([])
     const [loading, setLoading] = useState(false)
+    const [isInitialLoading, setIsInitialLoading] = useState(true)
 
     const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
     const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
@@ -144,6 +146,7 @@ export default function AppointmentsPage() {
     // Initial load — consolidated error
     useEffect(() => {
         async function loadAll() {
+            setIsInitialLoading(true)
             const results = await Promise.allSettled([
                 loadDayData(),
                 loadMonthData(),
@@ -152,6 +155,7 @@ export default function AppointmentsPage() {
             if (results.some(r => r.status === 'rejected')) {
                 toast.error('Network error. Could not load appointment data.')
             }
+            setIsInitialLoading(false)
         }
         loadAll()
     }, [loadDayData, loadMonthData, loadWeekData])
@@ -309,7 +313,7 @@ export default function AppointmentsPage() {
                         dayAppointments={dayAppointments}
                         isDayUnavailable={isDayUnavailable}
                         unavailableTimeSlots={unavailableTimeSlots}
-                        loading={loading}
+                        loading={isInitialLoading || loading}
                         onDateChange={(d) => {
                             setSelectedDate(d)
                             setCalMonth(d.getMonth())
@@ -326,7 +330,7 @@ export default function AppointmentsPage() {
                         appointments={dayAppointments}
                         isDayUnavailable={isDayUnavailable}
                         unavailableTimeSlots={unavailableTimeSlots}
-                        loading={loading}
+                        loading={isInitialLoading || loading}
                         onMakeDayUnavailable={async () => {
                             if (isDayUnavailable) {
                                 await removeSlotUnavailable(dateStr)
@@ -344,6 +348,7 @@ export default function AppointmentsPage() {
                         selectedDate={selectedDate}
                         appointments={weekAppointments}
                         unavailableSlots={weekUnavailable}
+                        loading={isInitialLoading || loading}
                         onDeleteAppointment={setAppointmentToDelete}
                     />
                 )}
@@ -508,10 +513,7 @@ function CalendarView({
 
                 <div className="flex-1 min-h-0 overflow-y-auto">
                     {loading ? (
-                        <div className="flex items-center gap-2 py-4">
-                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-xs text-gray-400">Loading…</span>
-                        </div>
+                        <LoadingSpinner message="Loading..." className="py-8" />
                     ) : isDayUnavailable ? (
                         <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-3 text-center">
                             <p className="text-sm text-red-500 font-medium">Day marked unavailable</p>
@@ -613,10 +615,7 @@ function DayView({
 
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
-                    <div className="flex items-center gap-3 px-6 py-12 justify-center">
-                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm text-gray-400">Loading…</span>
-                    </div>
+                    <LoadingSpinner message="Loading appointments..." className="py-12" />
                 ) : isDayUnavailable ? (
                     <div className="px-6 py-12 text-center">
                         <p className="text-sm font-semibold text-red-500">This entire day is marked unavailable.</p>
@@ -679,11 +678,13 @@ function WeekView({
     selectedDate,
     appointments,
     unavailableSlots,
+    loading,
     onDeleteAppointment,
 }: {
     selectedDate: Date
     appointments: Appointment[]
     unavailableSlots: UnavailableSlot[]
+    loading: boolean
     onDeleteAppointment: (id: string) => void
 }) {
     const weekDates = getWeekDates(selectedDate)
@@ -704,7 +705,8 @@ function WeekView({
     })
 
     return (
-        <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-auto">
+        <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-auto relative min-h-[300px]">
+            {loading && <LoadingSpinner fullPage message="Loading week view..." />}
             <table className="min-w-[600px] w-full text-sm border-collapse">
                 <thead>
                     <tr className="border-b border-gray-100">

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import AddPatientModal from '@/components/AddPatientModal'
 import DeletePatientModal from '@/components/DeletePatientModal'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 export default function PatientsPage() {
     const router = useRouter()
@@ -214,8 +215,8 @@ export default function PatientsPage() {
                         <tbody>
                             {patientsLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                                        Loading patients...
+                                    <td colSpan={6}>
+                                        <LoadingSpinner message="Loading patients…" />
                                     </td>
                                 </tr>
                             ) : filteredPatients.length === 0 ? (

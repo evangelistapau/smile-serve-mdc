@@ -13,6 +13,7 @@ import {
 } from '@/lib/supabase/patientHistoryService'
 import { ArrowLeft, Pencil, Trash2, Save, X, Plus, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import DeletePatientModal from '@/components/DeletePatientModal'
 
 export default function PatientDetailsPage() {
@@ -285,11 +286,7 @@ export default function PatientDetailsPage() {
     const selectClass = 'w-full px-3 py-1.5 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none'
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <p className="text-gray-500">Loading patient details...</p>
-            </div>
-        )
+        return <LoadingSpinner fullPage message="Loading patient details…" />
     }
 
     if (!patient) {

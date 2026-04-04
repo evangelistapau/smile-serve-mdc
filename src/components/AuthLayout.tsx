@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import Sidebar from '@/components/Sidebar'
 import { Menu } from 'lucide-react'
+import { LoadingSpinner } from './ui/loading-spinner'
 
 const pageTitles: Record<string, string> = {
     '/dashboard': 'Dashboard',
@@ -80,11 +81,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
     // Still checking auth for a protected page
     if (checking) {
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-                <p>Loading…</p>
-            </div>
-        )
+        return <LoadingSpinner fullPage message="Verifying session…" />
     }
 
     // Not authenticated — the redirect will fire from the effect
@@ -116,7 +113,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-auto p-3 md:p-6">
+                <div className="flex-1 overflow-auto p-3 md:p-6 relative">
                     {children}
                 </div>
             </div>

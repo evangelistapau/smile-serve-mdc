@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { User, Lock, Pencil, Check, X, History, Mail, Database } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import {
     getAccountInfo,
     updateDisplayName,
@@ -106,10 +107,7 @@ export default function SettingsPage() {
 
                 <div className="px-6 py-6">
                     {loadingAccount ? (
-                        <div className="flex items-center gap-3 py-4">
-                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-gray-400">Loading account info…</span>
-                        </div>
+                        <LoadingSpinner message="Loading account info…" className="py-4" />
                     ) : account ? (
                         <>
                             {/* Setup prompt for new users */}
@@ -209,10 +207,7 @@ export default function SettingsPage() {
 
                     <div className="px-6 py-6">
                         {loadingBrevo ? (
-                            <div className="flex items-center gap-3 py-4">
-                                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                                <span className="text-sm text-gray-400">Loading sending limit…</span>
-                            </div>
+                            <LoadingSpinner message="Loading sending limit…" className="py-4" />
                         ) : brevo ? (
                             <div className="flex flex-wrap items-center gap-8">
                                 {/* Credits */}
@@ -253,10 +248,7 @@ export default function SettingsPage() {
 
                     <div className="px-6 py-6">
                         {loadingDbSize ? (
-                            <div className="flex items-center gap-3 py-4">
-                                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                                <span className="text-sm text-gray-400">Loading database size…</span>
-                            </div>
+                            <LoadingSpinner message="Loading database size…" className="py-4" />
                         ) : dbSize ? (
                             <div className="flex flex-wrap items-end gap-8">
                                 {/* Human-readable size */}
@@ -305,10 +297,7 @@ export default function SettingsPage() {
 
                 <div className="px-6 py-6">
                     {loadingHistory ? (
-                        <div className="flex items-center gap-3 py-4">
-                            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-gray-400">Loading login history…</span>
-                        </div>
+                        <LoadingSpinner message="Loading login history…" className="py-4" />
                     ) : loginHistory.length === 0 ? (
                         <p className="text-sm text-gray-400 py-4">No login history found.</p>
                     ) : (

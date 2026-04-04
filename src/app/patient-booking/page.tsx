@@ -14,6 +14,7 @@ import {
 } from '@/lib/supabase/appointmentService'
 import { sendBookingConfirmationSms, sendBookingReminderSms } from '@/lib/supabase/smsService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MONTH_NAMES = [
@@ -429,10 +430,7 @@ function TimeSlots({
                 {/* Scrollable Time Slots */}
                 <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
                     {loading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            <span className="ml-3 text-sm text-gray-400">Loading available slots…</span>
-                        </div>
+                        <LoadingSpinner message="Loading available slots\u2026" />
                     ) : (
                         ALL_TIME_SLOTS.map((time) => {
                             const booked = bookedSlots.includes(time)

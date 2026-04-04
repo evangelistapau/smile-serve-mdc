@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -143,11 +144,7 @@ export default function DashboardPage() {
     }
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
-            </div>
-        )
+        return <LoadingSpinner fullPage message="Loading dashboard…" />
     }
 
     return (
@@ -483,10 +480,7 @@ export default function DashboardPage() {
 
                         <div className="flex-1 overflow-y-auto">
                             {loadingSelected ? (
-                                <div className="h-full flex flex-col items-center justify-center py-8">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3" />
-                                    <p className="text-sm font-medium text-gray-400">Loading appointments...</p>
-                                </div>
+                                <LoadingSpinner message="Loading appointments…" className="py-8" />
                             ) : selectedAppointments.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center py-8">
                                     <p className="text-sm font-medium text-gray-400">
