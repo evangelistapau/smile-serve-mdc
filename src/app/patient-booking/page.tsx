@@ -175,7 +175,7 @@ export default function PatientBookingPage() {
         setFullyBookedDates(fullyBooked)
     }, [calYear, calMonth])
 
-    useEffect(() => { loadMonthData().catch(() => {}) }, [loadMonthData])
+    useEffect(() => { loadMonthData().catch(() => { }) }, [loadMonthData])
 
     // Show one consolidated toast on initial load if either fails
     useEffect(() => {
@@ -186,7 +186,7 @@ export default function PatientBookingPage() {
             }
         }
         initialLoad()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const handleRealtimeUpdate = useCallback(() => {

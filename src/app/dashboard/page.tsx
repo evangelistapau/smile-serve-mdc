@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Appointment } from '@/types/appointment'
 import {
@@ -9,7 +9,7 @@ import {
     getUpcomingAppointments,
     DashboardStats,
 } from '@/lib/supabase/dashboardService'
-import { getAppointmentDatesForMonth, getAppointmentsForDateRange } from '@/lib/supabase/appointmentService'
+import { getAppointmentsForDateRange } from '@/lib/supabase/appointmentService'
 import { getAccountInfo } from '@/lib/supabase/settingsService'
 import {
     Users,
@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -42,45 +43,52 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true)
     const [appointmentDates, setAppointmentDates] = useState<Set<string>>(new Set())
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            setLoading(true)
-            try {
-                const now = new Date()
-                const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6)
+    const refreshDashboardData = useCallback(async (isInitial = false) => {
+        if (isInitial) setLoading(true)
+        try {
+            const now = new Date()
+            const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+            const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6)
 
-                const dayOfWeek = now.getDay()
-                const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-                const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset)
-                const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+            const dayOfWeek = now.getDay()
+            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+            const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset)
+            const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
 
-                const [statsRes, todayRes, upcomingRes, weekCalendarAppts, weekAppts] = await Promise.all([
-                    getDashboardStats(),
-                    getTodayAppointments(),
-                    getUpcomingAppointments(10),
-                    getAppointmentsForDateRange(toDateStr(monday), toDateStr(sunday)),
-                    getAppointmentsForDateRange(toDateStr(now), toDateStr(weekEnd)),
-                ])
-                setStats(statsRes)
-                setTodayAppointments(todayRes)
-                setSelectedAppointments(todayRes)
-                setUpcomingAppointments(upcomingRes)
-                setUpcomingWeekAppointments(weekAppts)
-                setAppointmentDates(new Set(weekCalendarAppts.map(a => a.appointment_date)))
+            const [statsRes, todayRes, upcomingRes, weekCalendarAppts, weekAppts] = await Promise.all([
+                getDashboardStats(),
+                getTodayAppointments(),
+                getUpcomingAppointments(10),
+                getAppointmentsForDateRange(toDateStr(monday), toDateStr(sunday)),
+                getAppointmentsForDateRange(toDateStr(now), toDateStr(weekEnd)),
+            ])
+            setStats(statsRes)
+            setTodayAppointments(todayRes)
+            setSelectedAppointments(todayRes)
+            setUpcomingAppointments(upcomingRes)
+            setUpcomingWeekAppointments(weekAppts)
+            setAppointmentDates(new Set(weekCalendarAppts.map(a => a.appointment_date)))
 
+            if (isInitial) {
                 const account = await getAccountInfo()
                 if (account?.displayName) setAdminName(account.displayName)
                 else if (account?.email) setAdminName(account.email.split('@')[0])
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error)
-                toast.error('Network error. Could not load dashboard data.')
-            } finally {
-                setLoading(false)
             }
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error)
+            if (isInitial) toast.error('Network error. Could not load dashboard data.')
+        } finally {
+            if (isInitial) setLoading(false)
         }
-        fetchDashboardData()
     }, [])
+
+    // Initial load
+    useEffect(() => {
+        refreshDashboardData(true)
+    }, [refreshDashboardData])
+
+    // Real-time updates when appointments change
+    useRealtimeAppointments(refreshDashboardData)
 
     const getTimeGreeting = () => {
         const hour = new Date().getHours()
@@ -419,8 +427,8 @@ export default function DashboardPage() {
                                 const hasAppointment = appointmentDates.has(cell.dateStr)
 
                                 return (
-                                    <button 
-                                        key={cell.dateStr} 
+                                    <button
+                                        key={cell.dateStr}
                                         onClick={() => handleDateClick(cell.dateStr)}
                                         className="flex flex-col items-center py-1 cursor-pointer focus:outline-none group rounded-md hover:bg-gray-50/50 transition-colors"
                                     >
