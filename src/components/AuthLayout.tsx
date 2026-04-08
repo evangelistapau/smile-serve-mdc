@@ -122,7 +122,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
     // Authenticated — sidebar + content
     return (
-        <div className="flex md:h-screen bg-gray-50">
+        <div className="flex min-h-[100dvh] md:h-screen bg-gray-50">
             <Sidebar
                 mobileOpen={mobileSidebarOpen}
                 onMobileClose={() => setMobileSidebarOpen(false)}
