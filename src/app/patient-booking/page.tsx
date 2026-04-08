@@ -430,7 +430,7 @@ function TimeSlots({
                 {/* Scrollable Time Slots */}
                 <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
                     {loading ? (
-                        <LoadingSpinner message="Loading available slots\u2026" />
+                        <LoadingSpinner message="Loading available slots..." />
                     ) : (
                         ALL_TIME_SLOTS.map((time) => {
                             const booked = bookedSlots.includes(time)

@@ -63,6 +63,35 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         return () => subscription.unsubscribe()
     }, [router, isPublicPage, isLoginPage])
 
+    // Absolute Session Timeout (Time-boxing to 8 hours)
+    useEffect(() => {
+        if (!authenticated || isPublicPage) return;
+
+        const checkSessionTimeout = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session && session.user.last_sign_in_at) {
+                const signInTime = new Date(session.user.last_sign_in_at).getTime();
+                const maxSessionTimeMs = 8 * 60 * 60 * 1000; // 8 Hours
+
+                if (Date.now() - signInTime > maxSessionTimeMs) {
+                    supabase.auth.signOut().then(() => {
+                        // Clean up legacy local storage item just in case
+                        localStorage.removeItem('active_session_day');
+                        window.location.href = '/?session_expired=true';
+                    });
+                }
+            }
+        };
+
+        // Check immediately on load/navigation
+        checkSessionTimeout();
+
+        // Also check every minute in the background while they have the tab open
+        const interval = setInterval(checkSessionTimeout, 60000);
+
+        return () => clearInterval(interval);
+    }, [authenticated, isPublicPage]);
+
     // Close mobile sidebar on route change
     useEffect(() => {
         setMobileSidebarOpen(false)

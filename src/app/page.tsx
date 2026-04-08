@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase/client'
 import { recordLogin } from '../lib/supabase/settingsService'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,16 @@ export default function Home() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('session_expired') === 'true') {
+        toast.error('Your session has expired. Please log in again.');
+        window.history.replaceState({}, '', '/');
+      }
+    }
+  }, []);
 
   // Forgot password modal state
   const [showForgotModal, setShowForgotModal] = useState(false)

@@ -217,8 +217,8 @@ export default function SmsSettingsPage() {
                             <button
                                 key={s}
                                 onClick={() => setFilterStatus(s)}
-                                className={`px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-sm rounded-lg font-semibold transition whitespace-nowrap border ${filterStatus === s 
-                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm" 
+                                className={`px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-sm rounded-lg font-semibold transition whitespace-nowrap border ${filterStatus === s
+                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                                     : "bg-white text-gray-600 border-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"}`}
                             >
                                 {s.charAt(0).toUpperCase() + s.slice(1)} <span className="opacity-80 ml-0.5 font-medium">({countFor(s)})</span>
@@ -230,7 +230,7 @@ export default function SmsSettingsPage() {
                 <div className="px-5 md:px-6 py-4">
                     {/* Messages List */}
                     {logsLoading ? (
-                        <LoadingSpinner message="Loading messages\u2026" />
+                        <LoadingSpinner message="Loading messages..." />
                     ) : filteredLogs.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
