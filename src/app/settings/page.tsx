@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { User, Lock, Pencil, Check, X, History, Mail, Database } from 'lucide-react'
+import { User, Lock, Pencil, Check, X, History, Mail, Database, Phone, Smartphone, MapPin } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import {
     getAccountInfo,
@@ -11,6 +11,7 @@ import {
     getLoginHistory,
     getBrevoEmailLimit,
     getDbSize,
+    upsertAccountSettings,
     AccountInfo,
     LoginHistoryEntry,
     BrevoEmailLimit,
@@ -36,6 +37,11 @@ export default function SettingsPage() {
     const [editing, setEditing] = useState(false)
     const [editName, setEditName] = useState('')
     const [saving, setSaving] = useState(false)
+
+    // Inline edit state for account settings fields
+    const [editingField, setEditingField] = useState<string | null>(null)
+    const [editFieldValue, setEditFieldValue] = useState('')
+    const [savingField, setSavingField] = useState(false)
 
     useEffect(() => {
         async function loadAll() {
@@ -89,6 +95,41 @@ export default function SettingsPage() {
         }
         setSaving(false)
         setEditing(false)
+    }
+
+    const handleFieldEditStart = (field: string, currentValue: string) => {
+        setEditingField(field)
+        setEditFieldValue(currentValue)
+    }
+
+    const handleFieldEditCancel = () => {
+        setEditingField(null)
+        setEditFieldValue('')
+    }
+
+    const handleFieldEditSave = async () => {
+        if (!editingField) return
+        setSavingField(true)
+        try {
+            const success = await upsertAccountSettings({ [editingField]: editFieldValue.trim() } as Partial<Pick<AccountInfo, 'mobileNumber' | 'telephoneNumber' | 'address'>>)
+            if (success && account) {
+                setAccount({ ...account, [editingField]: editFieldValue.trim() })
+            } else if (success) {
+                // First time saving — create local state
+                if (account) {
+                    setAccount({
+                        ...account,
+                        mobileNumber: editingField === 'mobileNumber' ? editFieldValue.trim() : '',
+                        telephoneNumber: editingField === 'telephoneNumber' ? editFieldValue.trim() : '',
+                        address: editingField === 'address' ? editFieldValue.trim() : '',
+                    })
+                }
+            }
+        } catch (err) {
+            toast.error('Network error. Could not save.')
+        }
+        setSavingField(false)
+        setEditingField(null)
     }
 
     const displayName = account?.displayName
@@ -177,6 +218,114 @@ export default function SettingsPage() {
                                     <p className="text-base font-semibold text-gray-900">{account.email}</p>
                                 </div>
                             </div>
+
+                            {/* Divider */}
+                            <div className="border-t border-blue-100/60 my-6" />
+
+                            {/* Contact Information Fields */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-6">
+                                    {/* Mobile Number */}
+                                    <div>
+                                        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                                            <Smartphone className="w-3 h-3" /> Mobile Number
+                                        </p>
+                                        {editingField === 'mobileNumber' ? (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editFieldValue}
+                                                    onChange={(e) => setEditFieldValue(e.target.value)}
+                                                    placeholder="09XXXXXXXXX"
+                                                    autoFocus
+                                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+                                                />
+                                                <button onClick={handleFieldEditSave} disabled={savingField} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition disabled:opacity-40" title="Save">
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={handleFieldEditCancel} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition" title="Cancel">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-base font-semibold text-gray-900">
+                                                    {account?.mobileNumber || <span className="text-gray-300 italic font-normal">Not set</span>}
+                                                </p>
+                                                <button onClick={() => handleFieldEditStart('mobileNumber', account?.mobileNumber || '')} className="p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition" title="Edit">
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Telephone Number */}
+                                    <div>
+                                        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                                            <Phone className="w-3 h-3" /> Telephone Number
+                                        </p>
+                                        {editingField === 'telephoneNumber' ? (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editFieldValue}
+                                                    onChange={(e) => setEditFieldValue(e.target.value)}
+                                                    placeholder="042-XXXXXXX"
+                                                    autoFocus
+                                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+                                                />
+                                                <button onClick={handleFieldEditSave} disabled={savingField} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition disabled:opacity-40" title="Save">
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={handleFieldEditCancel} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition" title="Cancel">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-base font-semibold text-gray-900">
+                                                    {account?.telephoneNumber || <span className="text-gray-300 italic font-normal">Not set</span>}
+                                                </p>
+                                                <button onClick={() => handleFieldEditStart('telephoneNumber', account?.telephoneNumber || '')} className="p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition" title="Edit">
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Address */}
+                                    <div className="md:col-span-2">
+                                        <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+                                            <MapPin className="w-3 h-3" /> Address
+                                        </p>
+                                        {editingField === 'address' ? (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editFieldValue}
+                                                    onChange={(e) => setEditFieldValue(e.target.value)}
+                                                    placeholder="Enter clinic address"
+                                                    autoFocus
+                                                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                                />
+                                                <button onClick={handleFieldEditSave} disabled={savingField} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition disabled:opacity-40" title="Save">
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={handleFieldEditCancel} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition" title="Cancel">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-base font-semibold text-gray-900">
+                                                    {account?.address || <span className="text-gray-300 italic font-normal">Not set</span>}
+                                                </p>
+                                                <button onClick={() => handleFieldEditStart('address', account?.address || '')} className="p-1 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition" title="Edit">
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
                             <button
                                 onClick={() => router.push('/reset-password')}

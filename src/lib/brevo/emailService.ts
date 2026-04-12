@@ -1,4 +1,5 @@
 import { BrevoClient } from '@getbrevo/brevo'
+import { createClient } from '@supabase/supabase-js'
 
 // ─── Brevo client setup ───────────────────────────────────────
 
@@ -31,6 +32,23 @@ export async function sendBookingConfirmationEmail({
   appointmentTime,
   purpose,
 }: BookingConfirmationParams): Promise<void> {
+  // Fetch clinic mobile number from account_settings
+  let clinicPhone = ''
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { data } = await supabase
+      .from('account_settings')
+      .select('mobile_number')
+      .limit(1)
+      .single()
+    clinicPhone = data?.mobile_number || ''
+  } catch {
+    // Non-critical — will omit number from email
+  }
+
   await brevo.transactionalEmails.sendTransacEmail({
     sender: DEFAULT_SENDER,
     to: [{ email: patientEmail, name: patientName }],
@@ -40,6 +58,7 @@ export async function sendBookingConfirmationEmail({
       readableDate,
       appointmentTime,
       purpose,
+      clinicPhone,
     }),
   })
 }
@@ -51,7 +70,9 @@ function buildConfirmationHtml({
   readableDate,
   appointmentTime,
   purpose,
-}: Omit<BookingConfirmationParams, 'patientEmail'>) {
+  clinicPhone,
+}: Omit<BookingConfirmationParams, 'patientEmail'> & { clinicPhone: string }) {
+  const phoneText = clinicPhone ? `call or text us at ${clinicPhone}` : 'contact us'
   return `
     <div style="font-family: sans-serif; max-width: 480px; margin: auto; padding: 32px; background: #f9fafb; border-radius: 12px;">
       <h2 style="color: #3b82f6; margin-bottom: 8px;">Appointment Confirmed !</h2>
@@ -70,7 +91,7 @@ function buildConfirmationHtml({
       </div>
 
       <p style="color: #6b7280; font-size: 13px;">
-        If you need to reschedule or cancel, please call or text us at 0915-123-4567 at least 1 day in advance, or 2 hours before your appointment. Thank you and keep safe!
+        If you need to reschedule or cancel, please ${phoneText} at least 1 day in advance, or 2 hours before your appointment. Thank you and keep safe!
       </p>
     </div>
   `

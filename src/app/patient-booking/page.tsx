@@ -12,6 +12,7 @@ import {
     isDateFullyBooked,
     getUnavailableSlots,
 } from '@/lib/supabase/appointmentService'
+import { getAccountInfo } from '@/lib/supabase/settingsService'
 import { sendBookingConfirmationSms, sendBookingReminderSms } from '@/lib/supabase/smsService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
@@ -52,8 +53,18 @@ function isTimeSlotPast(time: string, selectedDate: Date) {
     return slotDate.getTime() - now.getTime() < 60 * 60 * 1000
 }
 
+// Shimmer placeholder for loading state
+function ShimmerLine({ width = 'w-32' }: { width?: string }) {
+    return <div className={`h-4 ${width} bg-gray-200 rounded animate-pulse`} />
+}
+
 // Clinic Info Card
-function ClinicInfoCard() {
+function ClinicInfoCard({ mobileNumber, telephoneNumber, address, loading }: {
+    mobileNumber: string
+    telephoneNumber: string
+    address: string
+    loading?: boolean
+}) {
     return (
         <div className="space-y-5">
             <div>
@@ -64,7 +75,9 @@ function ClinicInfoCard() {
                 <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-gray-700 mb-0.5">Address</p>
-                    <p className="text-sm text-gray-600">San Miguel,Boac, Marinduque</p>
+                    {loading ? <ShimmerLine width="w-40" /> : (
+                        <p className="text-sm text-gray-600">{address || 'Not set'}</p>
+                    )}
                 </div>
             </div>
 
@@ -72,9 +85,11 @@ function ClinicInfoCard() {
                 <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-gray-700 mb-0.5">Mobile Number</p>
-                    <a href="tel:09298218291" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                        09298218291
-                    </a>
+                    {loading ? <ShimmerLine /> : (
+                        <a href={`tel:${mobileNumber}`} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            {mobileNumber || 'Not set'}
+                        </a>
+                    )}
                 </div>
             </div>
 
@@ -82,9 +97,11 @@ function ClinicInfoCard() {
                 <Phone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-gray-700 mb-0.5">Telephone</p>
-                    <a href="tel:0423321554" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                        042-7541389
-                    </a>
+                    {loading ? <ShimmerLine /> : (
+                        <a href={`tel:${telephoneNumber}`} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            {telephoneNumber || 'Not set'}
+                        </a>
+                    )}
                 </div>
             </div>
 
@@ -126,6 +143,10 @@ export default function PatientBookingPage() {
     const [loadingSlots, setLoadingSlots] = useState(false)
     const [disabledDates, setDisabledDates] = useState<Set<string>>(new Set())
     const [fullyBookedDates, setFullyBookedDates] = useState<Set<string>>(new Set())
+    const [clinicMobile, setClinicMobile] = useState('')
+    const [clinicTelephone, setClinicTelephone] = useState('')
+    const [clinicAddress, setClinicAddress] = useState('')
+    const [loadingClinicInfo, setLoadingClinicInfo] = useState(true)
 
     const currentStep = !selectedDate ? 1 : !selectedTime ? 2 : 3
 
@@ -183,6 +204,20 @@ export default function PatientBookingPage() {
             const results = await Promise.allSettled([loadSlots(), loadMonthData()])
             if (results.some(r => r.status === 'rejected')) {
                 toast.error('Network error. Could not load booking data.')
+            }
+
+            // Fetch clinic contact info from account_settings
+            try {
+                const settings = await getAccountInfo()
+                if (settings) {
+                    setClinicMobile(settings.mobileNumber)
+                    setClinicTelephone(settings.telephoneNumber)
+                    setClinicAddress(settings.address)
+                }
+            } catch {
+                // Non-critical — clinic info will show 'Not set'
+            } finally {
+                setLoadingClinicInfo(false)
             }
         }
         initialLoad()
@@ -244,13 +279,13 @@ export default function PatientBookingPage() {
 
                     {/* Clinic Info - Sidebar */}
                     <div className="hidden xl:flex w-72 bg-gray-50 border-l border-gray-200 p-6 flex-col">
-                        <ClinicInfoCard />
+                                                <ClinicInfoCard mobileNumber={clinicMobile} telephoneNumber={clinicTelephone} address={clinicAddress} loading={loadingClinicInfo} />
                     </div>
                 </div>
 
                 {/* Clinic Info - Mobile/Tablet */}
                 <div className="xl:hidden w-full px-4 md:px-8 py-6 bg-gray-50 border-t border-gray-200">
-                    <ClinicInfoCard />
+                                            <ClinicInfoCard mobileNumber={clinicMobile} telephoneNumber={clinicTelephone} address={clinicAddress} loading={loadingClinicInfo} />
                 </div>
 
                 {showForm && selectedTime && (

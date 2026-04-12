@@ -5,6 +5,9 @@ import { supabase } from './client'
 export interface AccountInfo {
     email: string
     displayName: string | null
+    mobileNumber: string
+    telephoneNumber: string
+    address: string
 }
 
 export interface LoginHistoryEntry {
@@ -38,7 +41,7 @@ function parseUserAgent(ua: string): string {
     return `${browser} on ${os}`
 }
 
-// ─── Account Info (from auth) ──────────────
+// ─── Account Info (from auth + account_settings) ──────────────
 
 export async function getAccountInfo(): Promise<AccountInfo | null> {
     const { data: { user }, error } = await supabase.auth.getUser()
@@ -48,10 +51,45 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
         return null
     }
 
+    // Fetch contact info from account_settings table
+    const { data: settings } = await supabase
+        .from('account_settings')
+        .select('mobile_number, telephone_number, address')
+        .limit(1)
+        .single()
+
     return {
         email: user.email || '',
         displayName: user.user_metadata?.display_name || null,
+        mobileNumber: settings?.mobile_number || '',
+        telephoneNumber: settings?.telephone_number || '',
+        address: settings?.address || '',
     }
+}
+
+export async function upsertAccountSettings(settings: Partial<Pick<AccountInfo, 'mobileNumber' | 'telephoneNumber' | 'address'>>): Promise<boolean> {
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+        console.error('Error fetching user:', authError?.message)
+        return false
+    }
+
+    const row: Record<string, string> = { id: user.id }
+    if (settings.mobileNumber !== undefined) row.mobile_number = settings.mobileNumber
+    if (settings.telephoneNumber !== undefined) row.telephone_number = settings.telephoneNumber
+    if (settings.address !== undefined) row.address = settings.address
+    row.updated_at = new Date().toISOString()
+
+    const { error } = await supabase
+        .from('account_settings')
+        .upsert(row, { onConflict: 'id' })
+
+    if (error) {
+        console.error('Error upserting account settings:', error.message)
+        return false
+    }
+
+    return true
 }
 
 // ─── Update Profile ─────────────────────────────────────────
