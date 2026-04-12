@@ -59,7 +59,6 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
         .limit(1)
         .single()
 
-    console.log("test")
     return {
         email: user.email || '',
         displayName: user.user_metadata?.display_name || null,
