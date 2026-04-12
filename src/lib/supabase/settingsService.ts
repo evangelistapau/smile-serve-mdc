@@ -41,6 +41,7 @@ function parseUserAgent(ua: string): string {
     return `${browser} on ${os}`
 }
 
+
 // ─── Account Info (from auth + account_settings) ──────────────
 
 export async function getAccountInfo(): Promise<AccountInfo | null> {
@@ -58,6 +59,7 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
         .limit(1)
         .single()
 
+    console.log("test")
     return {
         email: user.email || '',
         displayName: user.user_metadata?.display_name || null,
@@ -65,6 +67,7 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
         telephoneNumber: settings?.telephone_number || '',
         address: settings?.address || '',
     }
+
 }
 
 export async function upsertAccountSettings(settings: Partial<Pick<AccountInfo, 'mobileNumber' | 'telephoneNumber' | 'address'>>): Promise<boolean> {
