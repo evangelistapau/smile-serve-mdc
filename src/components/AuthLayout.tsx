@@ -34,11 +34,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     const isLoginPage = pathname === '/' || pathname === '/login'
 
     useEffect(() => {
+        // Check if the URL hash contains a recovery token (from Supabase password reset email)
+        const hasRecoveryToken = typeof window !== 'undefined' &&
+            window.location.hash.includes('type=recovery')
+
         const check = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
                 setAuthenticated(true)
-                if (isLoginPage) {
+                // Don't redirect to dashboard if this is a recovery flow
+                if (isLoginPage && !hasRecoveryToken) {
                     router.push('/dashboard')
                     return
                 }
@@ -50,10 +55,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         check()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            // On PASSWORD_RECOVERY, redirect to reset-password page
+            if (event === 'PASSWORD_RECOVERY') {
+                setAuthenticated(true)
+                router.push('/reset-password')
+                return
+            }
             if (session) {
                 setAuthenticated(true)
-                if (isLoginPage) router.push('/dashboard')
+                if (isLoginPage && !hasRecoveryToken) router.push('/dashboard')
             } else {
                 setAuthenticated(false)
                 if (!isPublicPage) router.push('/')
