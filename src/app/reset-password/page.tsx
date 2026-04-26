@@ -21,6 +21,10 @@ export default function ResetPassword() {
     useEffect(() => {
         let redirectTimer: NodeJS.Timeout
 
+        if (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) {
+            setIsRecoveryFlow(true)
+        }
+
         // Supabase automatically picks up the recovery token from the URL hash
         // and establishes a session. We listen for that event.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(

@@ -59,7 +59,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             // On PASSWORD_RECOVERY, redirect to reset-password page
             if (event === 'PASSWORD_RECOVERY') {
                 setAuthenticated(true)
-                router.push('/reset-password')
+                router.push('/reset-password' + window.location.hash)
                 return
             }
             if (session) {
