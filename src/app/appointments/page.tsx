@@ -290,7 +290,7 @@ export default function AppointmentsPage() {
                         ))}
                     </div>
                     <a
-                        href="/patient-booking"
+                        href="https://smile-serve-mdc-booking-page.vercel.app/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 text-white text-xs font-medium rounded-xl hover:bg-blue-600 active:scale-[0.97]"

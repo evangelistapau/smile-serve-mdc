@@ -182,7 +182,7 @@ export default function DashboardPage() {
                             <span className="sm:hidden">Add Patient</span>
                         </Button>
                     </Link>
-                    <Link href="/patient-booking"
+                    <a href="https://smile-serve-mdc-booking-page.vercel.app/"
                         target="_blank"
                         rel="noopener noreferrer" className="flex-1">
 
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                             <span className="hidden sm:inline">Book for Walk-in</span>
                             <span className="sm:hidden">Book for Walk-in</span>
                         </Button>
-                    </Link>
+                    </a>
                 </div>
 
                 {/* Stat Cards */}
