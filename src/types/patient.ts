@@ -1,5 +1,5 @@
 export interface Patient {
-    id?: string           // UUID primary key (was patient_id)
+    id?: string           // UUID primary key
     patient_id?: string   // Human-readable display ID (e.g. PT-2026-1)
     first_name: string
     middle_name?: string  //optional
