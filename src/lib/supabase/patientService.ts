@@ -43,19 +43,19 @@ async function generateDisplayId(): Promise<string> {
     const year = new Date().getFullYear()
     const prefix = `PT-${year}-`
 
-    // Get the highest existing display ID for this year
+    // Fetch ALL patient_ids for this year and find the numeric max.
     const { data } = await supabase
         .from('patient')
         .select('patient_id')
         .like('patient_id', `${prefix}%`)
-        .order('patient_id', { ascending: false })
-        .limit(1)
 
     let nextNum = 1
-    if (data && data.length > 0 && data[0].patient_id) {
-        const lastNum = parseInt(data[0].patient_id.replace(prefix, ''), 10)
-        if (!isNaN(lastNum)) {
-            nextNum = lastNum + 1
+    if (data && data.length > 0) {
+        const nums = data
+            .map((row) => parseInt(row.patient_id?.replace(prefix, '') ?? '', 10))
+            .filter((n) => !isNaN(n))
+        if (nums.length > 0) {
+            nextNum = Math.max(...nums) + 1
         }
     }
 

@@ -123,12 +123,17 @@ export default function PatientsPage() {
     }
 
     const sortedPatients = [...filteredPatients].sort((a, b) => {
+        if (sortField === 'patient_id') {
+            // Extract the trailing number for numeric comparison (e.g. PT-2026-10 > PT-2026-9)
+            const numA = parseInt(a.patient_id?.split('-').pop() ?? '', 10)
+            const numB = parseInt(b.patient_id?.split('-').pop() ?? '', 10)
+            const diff = (isNaN(numA) ? 0 : numA) - (isNaN(numB) ? 0 : numB)
+            return sortAsc ? diff : -diff
+        }
+
         let valA = ''
         let valB = ''
-        if (sortField === 'patient_id') {
-            valA = a.patient_id || ''
-            valB = b.patient_id || ''
-        } else if (sortField === 'name') {
+        if (sortField === 'name') {
             valA = `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase()
             valB = `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase()
         } else if (sortField === 'last_visit') {
