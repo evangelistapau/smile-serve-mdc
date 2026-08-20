@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { User, Lock, Pencil, Check, X, History, Mail, Database, Phone, Smartphone, MapPin } from 'lucide-react'
+import { User, Lock, Pencil, Check, X, History, Mail, Database, Phone, Smartphone, MapPin, Stethoscope } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import DentistModal from '@/components/DentistModal'
 import {
     getAccountInfo,
     updateDisplayName,
@@ -32,6 +33,9 @@ export default function SettingsPage() {
     const [loadingBrevo, setLoadingBrevo] = useState(true)
     const [dbSize, setDbSize] = useState<DbSizeInfo | null>(null)
     const [loadingDbSize, setLoadingDbSize] = useState(true)
+
+    // Dentist Modal state
+    const [isDentistModalOpen, setIsDentistModalOpen] = useState(false)
 
     // Edit state
     const [editing, setEditing] = useState(false)
@@ -327,13 +331,28 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
 
-                            <button
-                                onClick={() => router.push('/reset-password')}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-blue-200 bg-white rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition"
-                            >
-                                <Lock className="w-4 h-4 text-blue-500" />
-                                Reset Password
-                            </button>
+                            <div className="flex flex-wrap items-center gap-3 pt-2">
+                                <button
+                                    onClick={() => setIsDentistModalOpen(true)}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-sm"
+                                >
+                                    <Stethoscope className="w-4 h-4" />
+                                    See dentists
+                                    {account?.dentist && account.dentist.length > 0 && (
+                                        <span className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full font-bold">
+                                            {account.dentist.length}
+                                        </span>
+                                    )}
+                                </button>
+
+                                <button
+                                    onClick={() => router.push('/reset-password')}
+                                    className="inline-flex items-center gap-2 px-4 py-2 border border-blue-200 bg-white rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition"
+                                >
+                                    <Lock className="w-4 h-4 text-blue-500" />
+                                    Reset Password
+                                </button>
+                            </div>
                         </>
                     ) : (
                         <p className="text-sm text-gray-400">Unable to load account information.</p>
@@ -493,6 +512,18 @@ export default function SettingsPage() {
                     )}
                 </div>
             </div>
+
+            {/* ═══ Dentist CRUD Modal ═══ */}
+            <DentistModal
+                isOpen={isDentistModalOpen}
+                onClose={() => setIsDentistModalOpen(false)}
+                initialDentists={account?.dentist || []}
+                onDentistsUpdated={(updatedDentists) => {
+                    if (account) {
+                        setAccount({ ...account, dentist: updatedDentists })
+                    }
+                }}
+            />
         </div>
     )
 }

@@ -8,6 +8,22 @@ export interface AccountInfo {
     mobileNumber: string
     telephoneNumber: string
     address: string
+    dentist: string[]
+}
+
+// ─── Format Dentist Name Helper ─────────────────────────────
+
+export function formatDentistName(name: string): string {
+    const trimmed = name.trim()
+    if (!trimmed) return ''
+
+    // Check if name starts with "Dr." or "Dr " or "dr" (case-insensitive)
+    if (/^dr\.?\s*/i.test(trimmed)) {
+        const withoutDr = trimmed.replace(/^dr\.?\s*/i, '').trim()
+        return withoutDr ? `Dr. ${withoutDr}` : ''
+    }
+
+    return `Dr. ${trimmed}`
 }
 
 export interface LoginHistoryEntry {
@@ -55,7 +71,7 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
     // Fetch contact info from account_settings table
     const { data: settings } = await supabase
         .from('account_settings')
-        .select('mobile_number, telephone_number, address')
+        .select('mobile_number, telephone_number, address, dentist')
         .limit(1)
         .single()
 
@@ -65,6 +81,7 @@ export async function getAccountInfo(): Promise<AccountInfo | null> {
         mobileNumber: settings?.mobile_number || '',
         telephoneNumber: settings?.telephone_number || '',
         address: settings?.address || '',
+        dentist: Array.isArray(settings?.dentist) ? settings.dentist : [],
     }
 
 }
@@ -76,7 +93,7 @@ export async function upsertAccountSettings(settings: Partial<Pick<AccountInfo, 
         return false
     }
 
-    const row: Record<string, string> = { id: user.id }
+    const row: Record<string, any> = { id: user.id }
     if (settings.mobileNumber !== undefined) row.mobile_number = settings.mobileNumber
     if (settings.telephoneNumber !== undefined) row.telephone_number = settings.telephoneNumber
     if (settings.address !== undefined) row.address = settings.address
@@ -88,6 +105,32 @@ export async function upsertAccountSettings(settings: Partial<Pick<AccountInfo, 
 
     if (error) {
         console.error('Error upserting account settings:', error.message)
+        return false
+    }
+
+    return true
+}
+
+export async function updateDentists(dentists: string[]): Promise<boolean> {
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+        console.error('Error fetching user:', authError?.message)
+        return false
+    }
+
+    const { error } = await supabase
+        .from('account_settings')
+        .upsert(
+            {
+                id: user.id,
+                dentist: dentists,
+                updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+        )
+
+    if (error) {
+        console.error('Error updating dentists:', error.message)
         return false
     }
 

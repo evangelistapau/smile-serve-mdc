@@ -553,6 +553,12 @@ function CalendarView({
                                             <span className="truncate">{appt.purpose}</span>
                                         </div>
                                     )}
+                                    {appt.dentist_name && (
+                                        <div className="absolute bottom-2 right-2 flex items-center gap-1 text-[10px] text-blue-600 font-semibold bg-blue-100/70 px-1.5 py-0.5 rounded-full">
+
+                                            <span className="max-w-[80px] truncate">{appt.dentist_name}</span>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -755,6 +761,11 @@ function WeekView({
                                             ) : appt ? (
                                                 <div className="h-full bg-blue-50 border border-blue-100 rounded-md px-2 py-1.5 overflow-hidden relative group">
                                                     <p className="text-xs font-semibold text-gray-900 leading-tight truncate pr-4">{appt.patient_name}</p>
+                                                    {appt.dentist_name && (
+                                                        <p className="text-[10px] text-blue-600 font-semibold mt-0.5 flex items-center gap-0.5 truncate">
+                                                            {appt.dentist_name}
+                                                        </p>
+                                                    )}
                                                     {appt.phone_number && (
                                                         <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-0.5 truncate">
                                                             <Phone className="w-2.5 h-2.5 flex-shrink-0" />{appt.phone_number}

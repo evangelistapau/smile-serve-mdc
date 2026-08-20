@@ -19,7 +19,6 @@ import {
     ChevronRight,
     CalendarPlus,
     UserPlus,
-    Clock,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -509,7 +508,7 @@ export default function DashboardPage() {
                                             : timeParts[0]
 
                                         return (
-                                            <div key={apt.appointment_id} className={cn("rounded-xl p-3 transition-colors hover:bg-blue-100/50", bgColor)}>
+                                            <div key={apt.appointment_id} className={cn("rounded-xl p-3 transition-colors hover:bg-blue-100/50 relative", bgColor)}>
                                                 <div className="flex items-start gap-2.5">
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-xs font-semibold text-gray-900 truncate">
@@ -523,6 +522,11 @@ export default function DashboardPage() {
                                                         </p>
                                                     </div>
                                                 </div>
+                                                {apt.dentist_name && (
+                                                    <div className="absolute bottom-2 right-2 flex items-center gap-1 text-[10px] text-blue-600 font-semibold bg-blue-100/80 px-1.5 py-0.5 rounded-full">
+                                                        <span className="max-w-[80px] truncate">{apt.dentist_name}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )
                                     })}

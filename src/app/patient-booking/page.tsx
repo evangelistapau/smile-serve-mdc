@@ -279,13 +279,13 @@ export default function PatientBookingPage() {
 
                     {/* Clinic Info - Sidebar */}
                     <div className="hidden xl:flex w-72 bg-gray-50 border-l border-gray-200 p-6 flex-col">
-                                                <ClinicInfoCard mobileNumber={clinicMobile} telephoneNumber={clinicTelephone} address={clinicAddress} loading={loadingClinicInfo} />
+                        <ClinicInfoCard mobileNumber={clinicMobile} telephoneNumber={clinicTelephone} address={clinicAddress} loading={loadingClinicInfo} />
                     </div>
                 </div>
 
                 {/* Clinic Info - Mobile/Tablet */}
                 <div className="xl:hidden w-full px-4 md:px-8 py-6 bg-gray-50 border-t border-gray-200">
-                                            <ClinicInfoCard mobileNumber={clinicMobile} telephoneNumber={clinicTelephone} address={clinicAddress} loading={loadingClinicInfo} />
+                    <ClinicInfoCard mobileNumber={clinicMobile} telephoneNumber={clinicTelephone} address={clinicAddress} loading={loadingClinicInfo} />
                 </div>
 
                 {showForm && selectedTime && (
