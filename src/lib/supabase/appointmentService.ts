@@ -247,13 +247,20 @@ export interface UnavailableSlot {
     id: string
     date: string
     time_slot: string | null  // null = entire day
+    dentist_name: string | null
 }
 
-export async function getUnavailableSlots(date: string): Promise<UnavailableSlot[]> {
-    const { data, error } = await supabase
+export async function getUnavailableSlots(date: string, dentistName?: string): Promise<UnavailableSlot[]> {
+    let query = supabase
         .from('unavailable_slots')
-        .select('id, date, time_slot')
+        .select('id, date, time_slot, dentist_name')
         .eq('date', date)
+
+    if (dentistName) {
+        query = query.eq('dentist_name', dentistName)
+    }
+
+    const { data, error } = await query
 
     if (error) {
         console.error('Error fetching unavailable slots:', error.message)
@@ -264,13 +271,20 @@ export async function getUnavailableSlots(date: string): Promise<UnavailableSlot
 
 export async function getUnavailableSlotsForRange(
     startDate: string,
-    endDate: string
+    endDate: string,
+    dentistName?: string
 ): Promise<UnavailableSlot[]> {
-    const { data, error } = await supabase
+    let query = supabase
         .from('unavailable_slots')
-        .select('id, date, time_slot')
+        .select('id, date, time_slot, dentist_name')
         .gte('date', startDate)
         .lte('date', endDate)
+
+    if (dentistName) {
+        query = query.eq('dentist_name', dentistName)
+    }
+
+    const { data, error } = await query
 
     if (error) {
         console.error('Error fetching unavailable slots range:', error.message)
@@ -279,10 +293,10 @@ export async function getUnavailableSlotsForRange(
     return data || []
 }
 
-export async function setSlotUnavailable(date: string, timeSlot?: string): Promise<boolean> {
+export async function setSlotUnavailable(date: string, timeSlot?: string, dentistName?: string): Promise<boolean> {
     const { error } = await supabase
         .from('unavailable_slots')
-        .insert({ date, time_slot: timeSlot || null })
+        .insert({ date, time_slot: timeSlot || null, dentist_name: dentistName || null })
 
     if (error) {
         console.error('Error setting slot unavailable:', error.message)
@@ -291,7 +305,7 @@ export async function setSlotUnavailable(date: string, timeSlot?: string): Promi
     return true
 }
 
-export async function removeSlotUnavailable(date: string, timeSlot?: string): Promise<boolean> {
+export async function removeSlotUnavailable(date: string, timeSlot?: string, dentistName?: string): Promise<boolean> {
     let query = supabase
         .from('unavailable_slots')
         .delete()
@@ -301,6 +315,10 @@ export async function removeSlotUnavailable(date: string, timeSlot?: string): Pr
         query = query.eq('time_slot', timeSlot)
     } else {
         query = query.is('time_slot', null)
+    }
+
+    if (dentistName) {
+        query = query.eq('dentist_name', dentistName)
     }
 
     const { error } = await query

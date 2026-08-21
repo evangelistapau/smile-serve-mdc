@@ -20,6 +20,7 @@ import type { UnavailableSlot } from '@/lib/supabase/appointmentService'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { getAccountInfo } from '@/lib/supabase/settingsService'
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -97,6 +98,9 @@ export default function AppointmentsPage() {
     const [loading, setLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
+    const [dentists, setDentists] = useState<string[]>([])
+    const [selectedDentist, setSelectedDentist] = useState<string | null>(null)
+
     const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
     const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
 
@@ -107,7 +111,7 @@ export default function AppointmentsPage() {
         try {
             const [appts, unavail] = await Promise.all([
                 getAppointmentsForDate(dateStr),
-                getUnavailableSlots(dateStr),
+                getUnavailableSlots(dateStr, selectedDentist ?? undefined),
             ])
             setDayAppointments(appts)
             setUnavailableSlots(unavail)
@@ -116,7 +120,7 @@ export default function AppointmentsPage() {
         } finally {
             setLoading(false)
         }
-    }, [dateStr])
+    }, [dateStr, selectedDentist])
 
     const loadMonthData = useCallback(async () => {
         const startDate = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`
@@ -124,11 +128,11 @@ export default function AppointmentsPage() {
         const endDate = `${calYear}-${String(calMonth + 1).padStart(2, '00')}-${String(lastDay).padStart(2, '0')}`
         const [appts, unavail] = await Promise.all([
             getAppointmentsForDateRange(startDate, endDate),
-            getUnavailableSlotsForRange(startDate, endDate),
+            getUnavailableSlotsForRange(startDate, endDate, selectedDentist ?? undefined),
         ])
         setMonthAppointments(appts)
         setMonthUnavailable(unavail)
-    }, [calYear, calMonth])
+    }, [calYear, calMonth, selectedDentist])
 
     const loadWeekData = useCallback(async () => {
         if (viewMode !== 'week') return
@@ -137,11 +141,21 @@ export default function AppointmentsPage() {
         const endDate = toDateStr(dates[6])
         const [appts, unavail] = await Promise.all([
             getAppointmentsForDateRange(startDate, endDate),
-            getUnavailableSlotsForRange(startDate, endDate),
+            getUnavailableSlotsForRange(startDate, endDate, selectedDentist ?? undefined),
         ])
         setWeekAppointments(appts)
         setWeekUnavailable(unavail)
-    }, [viewMode, selectedDate])
+    }, [viewMode, selectedDate, selectedDentist])
+
+    // Load dentists from account_settings on mount
+    useEffect(() => {
+        getAccountInfo().then((info) => {
+            if (info?.dentist && info.dentist.length > 0) {
+                setDentists(info.dentist)
+                setSelectedDentist(info.dentist[0])
+            }
+        })
+    }, [])
 
     // Initial load — consolidated error
     useEffect(() => {
@@ -331,11 +345,14 @@ export default function AppointmentsPage() {
                         isDayUnavailable={isDayUnavailable}
                         unavailableTimeSlots={unavailableTimeSlots}
                         loading={isInitialLoading || loading}
+                        dentists={dentists}
+                        selectedDentist={selectedDentist}
+                        onSelectDentist={setSelectedDentist}
                         onMakeDayUnavailable={async () => {
                             if (isDayUnavailable) {
-                                await removeSlotUnavailable(dateStr)
+                                await removeSlotUnavailable(dateStr, undefined, selectedDentist ?? undefined)
                             } else {
-                                await setSlotUnavailable(dateStr)
+                                await setSlotUnavailable(dateStr, undefined, selectedDentist ?? undefined)
                             }
                             loadDayData()
                         }}
@@ -360,6 +377,9 @@ export default function AppointmentsPage() {
                     date={selectedDate}
                     appointments={dayAppointments}
                     unavailableSlots={unavailableSlots}
+                    dentists={dentists}
+                    selectedDentist={selectedDentist}
+                    onSelectDentist={setSelectedDentist}
                     onClose={() => {
                         setShowAvailabilityModal(false)
                         loadDayData()
@@ -579,6 +599,9 @@ function DayView({
     isDayUnavailable,
     unavailableTimeSlots,
     loading,
+    dentists,
+    selectedDentist,
+    onSelectDentist,
     onMakeDayUnavailable,
     onDeleteAppointment,
 }: {
@@ -587,6 +610,9 @@ function DayView({
     isDayUnavailable: boolean
     unavailableTimeSlots: Set<string>
     loading: boolean
+    dentists: string[]
+    selectedDentist: string | null
+    onSelectDentist: (d: string) => void
     onMakeDayUnavailable: () => void
     onDeleteAppointment: (id: string) => void
 }) {
@@ -596,27 +622,54 @@ function DayView({
         day: 'numeric',
     })
 
-    const apptByTime: Record<string, Appointment> = {}
-    appointments.forEach((a) => { apptByTime[a.appointment_time] = a })
+    const filteredAppointments = selectedDentist
+        ? appointments.filter((a) => a.dentist_name === selectedDentist)
+        : appointments
 
-    const hasBookings = appointments.length > 0
+    const apptByTime: Record<string, Appointment> = {}
+    filteredAppointments.forEach((a) => { apptByTime[a.appointment_time] = a })
+
+    const hasBookings = filteredAppointments.length > 0
     const canMarkUnavailable = !hasBookings || isDayUnavailable
 
     return (
         <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
-            <div className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
-                <Button
-                    onClick={onMakeDayUnavailable}
-                    disabled={!canMarkUnavailable}
-                    title={!canMarkUnavailable ? 'Cannot mark day unavailable while there are bookings' : ''}
-                    variant={isDayUnavailable ? 'outline' : 'destructive'}
-                    size="sm"
-                    className={isDayUnavailable ? 'text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 bg-white' : ''}
-                >
-                    {isDayUnavailable ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    {isDayUnavailable ? 'Mark Available' : 'Mark Unavailable'}
-                </Button>
+            <div className="flex-shrink-0 flex flex-col gap-2 px-4 md:px-6 py-3 border-b border-gray-100">
+                {/* Row 1: date label + mark unavailable button */}
+                <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
+                    <Button
+                        onClick={onMakeDayUnavailable}
+                        disabled={!canMarkUnavailable}
+                        title={!canMarkUnavailable ? 'Cannot mark day unavailable while there are bookings' : ''}
+                        variant={isDayUnavailable ? 'outline' : 'destructive'}
+                        size="sm"
+                        className={isDayUnavailable ? 'text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 bg-white' : ''}
+                    >
+                        {isDayUnavailable ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                        {isDayUnavailable ? 'Mark Available' : 'Mark Unavailable'}
+                    </Button>
+                </div>
+
+                {/* Row 2: dentist selector tabs */}
+                {dentists.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs text-gray-400 font-medium mr-1">Dentist:</span>
+                        {dentists.map((d) => (
+                            <button
+                                key={d}
+                                onClick={() => onSelectDentist(d)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                                    selectedDentist === d
+                                        ? 'bg-blue-500 text-white shadow-sm'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                {d}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -804,16 +857,27 @@ function AvailabilityModal({
     date,
     appointments,
     unavailableSlots: initialSlots,
+    dentists,
+    selectedDentist,
+    onSelectDentist,
     onClose,
 }: {
     date: Date
     appointments: Appointment[]
     unavailableSlots: UnavailableSlot[]
+    dentists: string[]
+    selectedDentist: string | null
+    onSelectDentist: (d: string) => void
     onClose: () => void
 }) {
     const dateStr = toDateStr(date)
     const [slots, setSlots] = useState<UnavailableSlot[]>(initialSlots)
     const [saving, setSaving] = useState<string | null>(null)
+
+    // Reload slots when the selected dentist changes
+    useEffect(() => {
+        getUnavailableSlots(dateStr, selectedDentist ?? undefined).then(setSlots)
+    }, [dateStr, selectedDentist])
 
     const isDayUnavailable = slots.some((s) => s.time_slot === null)
     const unavailableSet = new Set(slots.filter((s) => s.time_slot !== null).map((s) => s.time_slot!))
@@ -831,11 +895,11 @@ function AvailabilityModal({
 
         setSaving('day')
         if (isDayUnavailable) {
-            await removeSlotUnavailable(dateStr)
+            await removeSlotUnavailable(dateStr, undefined, selectedDentist ?? undefined)
         } else {
-            await setSlotUnavailable(dateStr)
+            await setSlotUnavailable(dateStr, undefined, selectedDentist ?? undefined)
         }
-        const updated = await getUnavailableSlots(dateStr)
+        const updated = await getUnavailableSlots(dateStr, selectedDentist ?? undefined)
         setSlots(updated)
         setSaving(null)
     }
@@ -852,11 +916,11 @@ function AvailabilityModal({
 
         setSaving(time)
         if (unavailableSet.has(time)) {
-            await removeSlotUnavailable(dateStr, time)
+            await removeSlotUnavailable(dateStr, time, selectedDentist ?? undefined)
         } else {
-            await setSlotUnavailable(dateStr, time)
+            await setSlotUnavailable(dateStr, time, selectedDentist ?? undefined)
         }
-        const updated = await getUnavailableSlots(dateStr)
+        const updated = await getUnavailableSlots(dateStr, selectedDentist ?? undefined)
         setSlots(updated)
         setSaving(null)
     }
@@ -865,8 +929,28 @@ function AvailabilityModal({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md relative max-h-[85vh] flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900">Availability: {formattedDate}</h2>
-                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 transition">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900">Availability: {formattedDate}</h2>
+                        {/* Dentist selector tabs */}
+                        {dentists.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                                {dentists.map((d) => (
+                                    <button
+                                        key={d}
+                                        onClick={() => onSelectDentist(d)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                                            selectedDentist === d
+                                                ? 'bg-blue-500 text-white shadow-sm'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {d}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 transition self-start">
                         <X className="w-5 h-5" />
                     </button>
                 </div>

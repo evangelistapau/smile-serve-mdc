@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Patient } from '@/types/patient'
 import { PatientHistory } from '@/types/patient_history'
 import { getPatientById, updatePatient, deletePatient } from '@/lib/supabase/patientService'
@@ -15,6 +16,9 @@ import { ArrowLeft, Pencil, Trash2, Save, X, Plus, ChevronDown } from 'lucide-re
 import { toast } from 'sonner'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import DeletePatientModal from '@/components/DeletePatientModal'
+
+// Dynamically import to avoid SSR issues with @react-pdf/renderer
+const PrescriptionButton = dynamic(() => import('@/components/PrescriptionPDF'), { ssr: false })
 
 export default function PatientDetailsPage() {
     const router = useRouter()
@@ -529,6 +533,7 @@ export default function PatientDetailsPage() {
                                 <span className="hidden sm:inline">Delete Patient</span>
                                 <span className="sm:hidden">Delete</span>
                             </button>
+                            <PrescriptionButton patient={patient} />
                         </>
                     ) : (
                         <>
@@ -548,6 +553,7 @@ export default function PatientDetailsPage() {
                                 <span className="hidden sm:inline">Delete Patient</span>
                                 <span className="sm:hidden">Delete</span>
                             </button>
+                            <PrescriptionButton patient={patient} />
                         </>
                     )}
                 </div>

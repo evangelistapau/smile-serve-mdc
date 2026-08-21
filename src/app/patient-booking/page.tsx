@@ -147,6 +147,8 @@ export default function PatientBookingPage() {
     const [clinicTelephone, setClinicTelephone] = useState('')
     const [clinicAddress, setClinicAddress] = useState('')
     const [loadingClinicInfo, setLoadingClinicInfo] = useState(true)
+    const [dentists, setDentists] = useState<string[]>([])
+    const [selectedDentist, setSelectedDentist] = useState<string | null>(null)
 
     const currentStep = !selectedDate ? 1 : !selectedTime ? 2 : 3
 
@@ -158,14 +160,14 @@ export default function PatientBookingPage() {
         setLoadingSlots(true)
         const [slots, unavail] = await Promise.all([
             getBookedTimeSlots(dateString),
-            getUnavailableSlots(dateString),
+            getUnavailableSlots(dateString, selectedDentist ?? undefined),
         ])
         setBookedSlots(slots)
         const dayBlocked = unavail.some((s) => s.time_slot === null)
         setIsDayBlocked(dayBlocked)
         setUnavailSlots(dayBlocked ? [] : unavail.filter((s) => s.time_slot !== null).map((s) => s.time_slot!))
         setLoadingSlots(false)
-    }, [dateString])
+    }, [dateString, selectedDentist])
 
     useEffect(() => {
         setBookedSlots([])
@@ -213,6 +215,10 @@ export default function PatientBookingPage() {
                     setClinicMobile(settings.mobileNumber)
                     setClinicTelephone(settings.telephoneNumber)
                     setClinicAddress(settings.address)
+                    if (settings.dentist && settings.dentist.length > 0) {
+                        setDentists(settings.dentist)
+                        setSelectedDentist(settings.dentist[0])
+                    }
                 }
             } catch {
                 // Non-critical — clinic info will show 'Not set'
@@ -274,6 +280,12 @@ export default function PatientBookingPage() {
                         unavailSlots={unavailSlots}
                         isDayBlocked={isDayBlocked}
                         loading={loadingSlots}
+                        dentists={dentists}
+                        selectedDentist={selectedDentist}
+                        onSelectDentist={(d) => {
+                            setSelectedDentist(d)
+                            setSelectedTime(null)
+                        }}
                         onTimeSlotSelect={handleTimeSlotSelect}
                     />
 
@@ -292,6 +304,7 @@ export default function PatientBookingPage() {
                     <BookingFormModal
                         selectedDate={selectedDate}
                         selectedTime={selectedTime}
+                        selectedDentist={selectedDentist}
                         onClose={handleFormClose}
                         onSuccess={handleBookingSuccess}
                     />
@@ -424,6 +437,9 @@ function TimeSlots({
     unavailSlots,
     isDayBlocked,
     loading,
+    dentists,
+    selectedDentist,
+    onSelectDentist,
     onTimeSlotSelect,
 }: {
     selectedDate: Date
@@ -432,6 +448,9 @@ function TimeSlots({
     unavailSlots: string[]
     isDayBlocked: boolean
     loading: boolean
+    dentists: string[]
+    selectedDentist: string | null
+    onSelectDentist: (d: string) => void
     onTimeSlotSelect: (time: string) => void
 }) {
     const dayName = selectedDate.toLocaleDateString('default', { weekday: 'long' })
@@ -444,11 +463,41 @@ function TimeSlots({
     return (
         <div className="w-full lg:w-1/2 p-4 md:p-8 bg-white lg:border-r border-gray-200 flex flex-col h-full">
             {/* Header */}
-            <p className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Step 2. select a time</p>
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            <p className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Step 2. Select a Dentist &amp; Time</p>
+
+            {/* Dentist selector */}
+            {dentists.length > 0 && (
+                <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Select Dentist</p>
+                    <div className="flex gap-2 flex-wrap">
+                        {dentists.map((d) => (
+                            <button
+                                key={d}
+                                onClick={() => onSelectDentist(d)}
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition border-2 ${
+                                    selectedDentist === d
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                }`}
+                            >
+                                {d}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
                 {dayName}
             </h3>
-            <p className="text-gray-500 text-sm mb-6">{formattedDate}</p>
+            <div className="flex items-center justify-between mb-6">
+                <p className="text-gray-500 text-sm">{formattedDate}</p>
+                {selectedDentist && (
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">
+                        {selectedDentist}
+                    </span>
+                )}
+            </div>
 
             {/* Wrapper */}
             <div className="flex flex-col flex-1 min-h-0">
@@ -505,11 +554,13 @@ function TimeSlots({
 function BookingFormModal({
     selectedDate,
     selectedTime,
+    selectedDentist,
     onClose,
     onSuccess,
 }: {
     selectedDate: Date
     selectedTime: string
+    selectedDentist: string | null
     onClose: () => void
     onSuccess: () => void
 }) {
@@ -543,6 +594,7 @@ function BookingFormModal({
                 appointment_date: dateStr,
                 appointment_time: selectedTime,
                 purpose: purpose || '',
+                dentist_name: selectedDentist || undefined,
             })
 
             const readableDate = selectedDate.toLocaleDateString('en-US', {
