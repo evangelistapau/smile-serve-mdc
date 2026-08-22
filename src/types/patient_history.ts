@@ -4,5 +4,8 @@ export interface PatientHistory {
     service?: string
     notes?: string
     date?: string
+    amount?: number
+    payment_method?: string
+    payment_status?: string
     created_at?: string
 }

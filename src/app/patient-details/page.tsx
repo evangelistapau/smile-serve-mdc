@@ -55,7 +55,7 @@ export default function PatientDetailsPage() {
     const [showHistoryForm, setShowHistoryForm] = useState(false)
     const [historySubmitting, setHistorySubmitting] = useState(false)
     const [editingHistoryId, setEditingHistoryId] = useState<string | null>(null)
-    const [historyForm, setHistoryForm] = useState({ date: '', service: '', customService: '', notes: '' })
+    const [historyForm, setHistoryForm] = useState({ date: '', service: '', customService: '', notes: '', amount: '', payment_method: '', payment_status: '' })
     const [historyToDelete, setHistoryToDelete] = useState<string | null>(null)
     const [deletingHistory, setDeletingHistory] = useState(false)
 
@@ -80,6 +80,8 @@ export default function PatientDetailsPage() {
         'Emergency / Walk-in',
         'Other',
     ]
+    const PAYMENT_METHODS = ['Cash', 'GCash']
+    const PAYMENT_STATUSES = ['Paid', 'Partial', 'Unpaid']
     const [historySortAsc, setHistorySortAsc] = useState(false)
 
     useEffect(() => {
@@ -199,7 +201,7 @@ export default function PatientDetailsPage() {
 
     const openAddHistory = () => {
         setEditingHistoryId(null)
-        setHistoryForm({ date: new Date().toISOString().split('T')[0], service: '', customService: '', notes: '' })
+        setHistoryForm({ date: new Date().toISOString().split('T')[0], service: '', customService: '', notes: '', amount: '', payment_method: '', payment_status: '' })
         setShowHistoryForm(true)
     }
 
@@ -211,6 +213,9 @@ export default function PatientDetailsPage() {
             service: isPreset ? (h.service || '') : (h.service ? 'Other' : ''),
             customService: isPreset ? '' : (h.service || ''),
             notes: h.notes || '',
+            amount: h.amount != null ? String(h.amount) : '',
+            payment_method: h.payment_method || '',
+            payment_status: h.payment_status || '',
         })
         setShowHistoryForm(true)
     }
@@ -218,7 +223,7 @@ export default function PatientDetailsPage() {
     const cancelHistoryForm = () => {
         setShowHistoryForm(false)
         setEditingHistoryId(null)
-        setHistoryForm({ date: '', service: '', customService: '', notes: '' })
+        setHistoryForm({ date: '', service: '', customService: '', notes: '', amount: '', payment_method: '', payment_status: '' })
     }
 
     const handleHistorySubmit = async () => {
@@ -226,12 +231,16 @@ export default function PatientDetailsPage() {
         setHistorySubmitting(true)
 
         const resolvedService = historyForm.service === 'Other' ? historyForm.customService : historyForm.service
+        const parsedAmount = historyForm.amount ? parseFloat(historyForm.amount) : undefined
 
         if (editingHistoryId) {
             const { data, error } = await updatePatientHistory(editingHistoryId, {
                 date: historyForm.date,
                 service: resolvedService || undefined,
                 notes: historyForm.notes,
+                amount: parsedAmount,
+                payment_method: historyForm.payment_method || undefined,
+                payment_status: historyForm.payment_status || undefined,
             })
             if (error) {
                 setError(error)
@@ -244,6 +253,9 @@ export default function PatientDetailsPage() {
                 date: historyForm.date,
                 service: resolvedService || undefined,
                 notes: historyForm.notes,
+                amount: parsedAmount,
+                payment_method: historyForm.payment_method || undefined,
+                payment_status: historyForm.payment_status || undefined,
             })
             if (error) {
                 setError(error)
@@ -632,6 +644,52 @@ export default function PatientDetailsPage() {
                                 />
                             </div>
                         )}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Amount</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={historyForm.amount}
+                                    onChange={(e) => setHistoryForm({ ...historyForm, amount: e.target.value })}
+                                    placeholder="0.00"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Payment Method</label>
+                                <div className="relative">
+                                    <select
+                                        value={historyForm.payment_method}
+                                        onChange={(e) => setHistoryForm({ ...historyForm, payment_method: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none"
+                                    >
+                                        <option value="">Select method</option>
+                                        {PAYMENT_METHODS.map((m) => (
+                                            <option key={m} value={m}>{m}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Payment Status</label>
+                                <div className="relative">
+                                    <select
+                                        value={historyForm.payment_status}
+                                        onChange={(e) => setHistoryForm({ ...historyForm, payment_status: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition appearance-none"
+                                    >
+                                        <option value="">Select status</option>
+                                        {PAYMENT_STATUSES.map((s) => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
+                                </div>
+                            </div>
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-600 mb-1">Notes <span className="text-red-500">*</span></label>
                             <textarea
@@ -696,6 +754,27 @@ export default function PatientDetailsPage() {
                                             </div>
                                             {/* Notes */}
                                             <p className="text-sm text-gray-700 break-words">{h.notes || '—'}</p>
+                                            {/* Payment Info */}
+                                            {(h.amount != null || h.payment_method || h.payment_status) && (
+                                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                    {h.amount != null && (
+                                                        <span className="text-sm font-semibold text-gray-900">₱{Number(h.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                                                    )}
+                                                    {h.payment_method && (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                                            {h.payment_method}
+                                                        </span>
+                                                    )}
+                                                    {h.payment_status && (
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${h.payment_status === 'Paid' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                                h.payment_status === 'Partial' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                                                    'bg-red-50 text-red-700 border-red-200'
+                                                            }`}>
+                                                            {h.payment_status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         {/* Actions — always visible on mobile, hover on desktop */}
                                         <div className="flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">

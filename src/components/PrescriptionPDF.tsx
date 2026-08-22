@@ -16,9 +16,9 @@ import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2 } from 'luci
 
 // ─── Clinic Data ────────────────────────────────────────────────
 const DOCTOR_INFO = {
-    name: 'DENTIST NAME',
-    licenseNo: '0123456',
-    ptrNo: '7654321',
+    name: 'ROSELLE LARGA-PIEDAD',
+    licenseNo: '39277',
+    ptrNo: '',
 }
 
 const CLINIC_INFO = {
