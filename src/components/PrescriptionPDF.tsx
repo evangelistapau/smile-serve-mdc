@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import {
@@ -14,12 +14,6 @@ import {
 import { Patient } from '@/types/patient'
 import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2 } from 'lucide-react'
 
-// ─── Clinic Data ────────────────────────────────────────────────
-const DOCTOR_INFO = {
-    name: 'ROSELLE LARGA-PIEDAD',
-    licenseNo: '39277',
-    ptrNo: '',
-}
 
 const CLINIC_INFO = {
     name: 'MODERN DENTISTRY CLINIC',
@@ -194,9 +188,12 @@ interface PrescriptionDocProps {
     patient: Patient
     date: string
     medications: MedicationEntry[]
+    doctorName: string
+    licenseNo: string
+    ptrNo: string
 }
 
-export function PrescriptionDocument({ patient, date, medications }: PrescriptionDocProps) {
+export function PrescriptionDocument({ patient, date, medications, doctorName, licenseNo, ptrNo }: PrescriptionDocProps) {
     const fullName = [patient.first_name, patient.middle_name, patient.last_name]
         .filter(Boolean)
         .join(' ')
@@ -210,7 +207,7 @@ export function PrescriptionDocument({ patient, date, medications }: Prescriptio
     return (
         <Document
             title={`Prescription - ${fullName}`}
-            author={DOCTOR_INFO.name}
+            author={doctorName}
             subject="Dental Prescription"
         >
             <Page size="A5" style={pdfStyles.page}>
@@ -288,17 +285,17 @@ export function PrescriptionDocument({ patient, date, medications }: Prescriptio
 
                 {/* Footer */}
                 <View style={pdfStyles.footer}>
-                    <Text style={pdfStyles.footerDoctorName}>{DOCTOR_INFO.name}</Text>
+                    <Text style={pdfStyles.footerDoctorName}>{doctorName.toUpperCase()}</Text>
                     <View style={pdfStyles.footerLine}>
                         <Text style={pdfStyles.footerLabel}>LICENSE NO.</Text>
                         <View style={pdfStyles.footerUnderline}>
-                            <Text style={pdfStyles.footerValue}>{DOCTOR_INFO.licenseNo}</Text>
+                            <Text style={pdfStyles.footerValue}>{licenseNo}</Text>
                         </View>
                     </View>
                     <View style={pdfStyles.footerLine}>
                         <Text style={pdfStyles.footerLabel}>PTR NO.</Text>
                         <View style={[pdfStyles.footerUnderline, { width: 72 }]}>
-                            <Text style={pdfStyles.footerValue}>{DOCTOR_INFO.ptrNo}</Text>
+                            <Text style={pdfStyles.footerValue}>{ptrNo}</Text>
                         </View>
                     </View>
                 </View>
@@ -323,6 +320,9 @@ type ModalStep = 'form' | 'preview'
 export default function PrescriptionButton({ patient }: PrescriptionButtonProps) {
     const [step, setStep] = useState<ModalStep | null>(null)
     const [meds, setMeds] = useState<MedicationEntry[]>([emptyMed()])
+    const [doctorName, setDoctorName] = useState('')
+    const [licenseNo, setLicenseNo] = useState('')
+    const [ptrNo, setPtrNo] = useState('')
 
     const today = new Date().toLocaleDateString('en-US', {
         month: '2-digit',
@@ -338,12 +338,18 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
 
     const openForm = () => {
         setMeds([emptyMed()])
+        setDoctorName('')
+        setLicenseNo('')
+        setPtrNo('')
         setStep('form')
     }
 
     const closeAll = () => {
         setStep(null)
         setMeds([emptyMed()])
+        setDoctorName('')
+        setLicenseNo('')
+        setPtrNo('')
     }
 
     const updateMed = (idx: number, field: keyof MedicationEntry, value: string) => {
@@ -357,7 +363,7 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
 
     const canPreview = meds.some(m => m.medication.trim())
 
-    const doc = <PrescriptionDocument patient={patient} date={today} medications={meds} />
+    const doc = <PrescriptionDocument patient={patient} date={today} medications={meds} doctorName={doctorName} licenseNo={licenseNo} ptrNo={ptrNo} />
 
     const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white transition'
     const labelCls = 'block text-xs font-semibold text-gray-600 mb-1'
@@ -396,6 +402,47 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
 
                         {/* Scrollable Body */}
                         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                            {/* Doctor Information */}
+                            <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+                                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                                    Doctor Information
+                                </span>
+                                <div>
+                                    <label className={labelCls}>
+                                        Doctor Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={doctorName}
+                                        onChange={e => setDoctorName(e.target.value)}
+                                        placeholder="e.g. Juan Dela Cruz"
+                                        className={inputCls}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className={labelCls}>License No.</label>
+                                        <input
+                                            type="text"
+                                            value={licenseNo}
+                                            onChange={e => setLicenseNo(e.target.value)}
+                                            placeholder="e.g. 39277"
+                                            className={inputCls}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelCls}>PTR No.</label>
+                                        <input
+                                            type="text"
+                                            value={ptrNo}
+                                            onChange={e => setPtrNo(e.target.value)}
+                                            placeholder="e.g. 12345"
+                                            className={inputCls}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             {meds.map((med, idx) => (
                                 <div key={idx} className="rounded-xl border border-gray-200 p-4 space-y-3 relative">
                                     {/* Medication number badge */}
