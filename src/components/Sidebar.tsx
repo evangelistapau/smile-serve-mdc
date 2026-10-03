@@ -17,12 +17,14 @@ import {
     ChevronLeft,
     ChevronRight,
     Sliders,
+    Banknote,
 } from 'lucide-react'
 
 const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Appointments', href: '/appointments', icon: CalendarDays },
     { label: 'Patients', href: '/patients', icon: Users },
+    { label: 'Finance', href: '/finance', icon: Banknote },
     { label: 'SMS Settings', href: '/sms', icon: Bell },
     { label: 'Account Settings', href: '/settings', icon: Sliders },
 ]
