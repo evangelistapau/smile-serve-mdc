@@ -14,7 +14,7 @@ import {
     BlobProvider,
 } from '@react-pdf/renderer'
 import { Patient } from '@/types/patient'
-import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2, Sparkles } from 'lucide-react'
 
 // ─── Font Registration ────────────────────────────────────────────────────────
 // react-pdf ONLY supports TTF/OTF — woff2 causes a DataView RangeError in
@@ -68,10 +68,10 @@ const pdfStyles = StyleSheet.create({
     // ── Watermark logo ──────────────────────────────────────────────────────────
     watermark: {
         position: 'absolute',
-        top: 120,
-        left: 30,
-        right: 30,
-        bottom: 60,
+        top: 90,
+        left: 10,
+        right: 10,
+        bottom: 28,
         opacity: 0.5,
         objectFit: 'contain',
     },
@@ -156,24 +156,37 @@ const pdfStyles = StyleSheet.create({
         marginBottom: 6,
     },
     // ── Medication body ──────────────────────────────────────────────────────────
+    medColumns: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+    },
+    medColumn: {
+        flex: 1,
+        flexDirection: 'column',
+    },
     medBlock: {
-        marginBottom: 12,
-        paddingLeft: 8,
+        marginBottom: 10,
+        paddingLeft: 4,
+        paddingRight: 4,
+        paddingTop: 4,
+        paddingBottom: 4,
     },
     medName: {
         fontFamily: 'Poppins',
         fontWeight: 700,
-        fontSize: 10,
+        fontSize: 9,
         color: '#111111',
         marginBottom: 2,
     },
     medDetail: {
         fontFamily: 'Poppins',
         fontWeight: 400,
-        fontSize: 9,
+        fontSize: 8,
         color: '#333333',
         marginBottom: 1,
-        paddingLeft: 6,
+        paddingLeft: 4,
     },
     emptyLines: {
         flex: 1,
@@ -306,20 +319,41 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
                 {/* Rx Image */}
                 <Image src={rxSrc} style={pdfStyles.rxImage} />
 
-                {/* Medication Entries or blank lines */}
-                {hasMeds ? (
-                    <View style={pdfStyles.emptyLines}>
-                        {medications.filter(m => m.medication.trim()).map((med, i) => (
-                            <View key={i} style={pdfStyles.medBlock}>
-                                <Text style={pdfStyles.medName}>{i + 1}. {med.medication}</Text>
-                                {med.quantity ? <Text style={pdfStyles.medDetail}>Qty: {med.quantity}</Text> : null}
-                                {med.frequency ? <Text style={pdfStyles.medDetail}>Frequency: {med.frequency}</Text> : null}
-                                {med.duration ? <Text style={pdfStyles.medDetail}>Duration: {med.duration}</Text> : null}
-                                {med.instructions ? <Text style={pdfStyles.medDetail}>Instructions: {med.instructions}</Text> : null}
+                {/* Medication Entries — left col: 1,2,3 / right col: 4,5,6 */}
+                {hasMeds ? (() => {
+                    const filledMeds = medications.filter(m => m.medication.trim())
+                    const mid = Math.ceil(filledMeds.length / 2)
+                    const leftCol = filledMeds.slice(0, mid)
+                    const rightCol = filledMeds.slice(mid)
+                    return (
+                        <View style={pdfStyles.medColumns}>
+                            {/* Left column: 1, 2, 3... */}
+                            <View style={pdfStyles.medColumn}>
+                                {leftCol.map((med, i) => (
+                                    <View key={i} style={pdfStyles.medBlock}>
+                                        <Text style={pdfStyles.medName}>{i + 1}. {med.medication}</Text>
+                                        {med.quantity ? <Text style={pdfStyles.medDetail}>Qty: {med.quantity}</Text> : null}
+                                        {med.frequency ? <Text style={pdfStyles.medDetail}>Freq: {med.frequency}</Text> : null}
+                                        {med.duration ? <Text style={pdfStyles.medDetail}>Dur: {med.duration}</Text> : null}
+                                        {med.instructions ? <Text style={pdfStyles.medDetail}>{med.instructions}</Text> : null}
+                                    </View>
+                                ))}
                             </View>
-                        ))}
-                    </View>
-                ) : (
+                            {/* Right column: 4, 5, 6... */}
+                            <View style={pdfStyles.medColumn}>
+                                {rightCol.map((med, i) => (
+                                    <View key={i} style={pdfStyles.medBlock}>
+                                        <Text style={pdfStyles.medName}>{mid + i + 1}. {med.medication}</Text>
+                                        {med.quantity ? <Text style={pdfStyles.medDetail}>Qty: {med.quantity}</Text> : null}
+                                        {med.frequency ? <Text style={pdfStyles.medDetail}>Freq: {med.frequency}</Text> : null}
+                                        {med.duration ? <Text style={pdfStyles.medDetail}>Dur: {med.duration}</Text> : null}
+                                        {med.instructions ? <Text style={pdfStyles.medDetail}>{med.instructions}</Text> : null}
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )
+                })() : (
                     <View style={pdfStyles.emptyLines}>
                         {Array.from({ length: 10 }).map((_, i) => (
                             <View key={i} style={pdfStyles.writingLine} />
@@ -329,12 +363,12 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
 
                 {/* Footer — doctor info bottom-right */}
                 <View style={pdfStyles.footer}>
-                    <Text style={pdfStyles.footerDoctorName}>{doctorName.toUpperCase()}</Text>
+                    <Text style={pdfStyles.footerDoctorName}>{(doctorName || '').toUpperCase()}</Text>
                     <View style={pdfStyles.footerLine}>
-                        <Text style={pdfStyles.footerLabel}>LICENSE NO. {licenseNo}</Text>
+                        <Text style={pdfStyles.footerLabel}>LICENSE NO. {licenseNo || ''}</Text>
                     </View>
                     <View style={pdfStyles.footerLine}>
-                        <Text style={pdfStyles.footerLabel}>PTR NO. {ptrNo}</Text>
+                        <Text style={pdfStyles.footerLabel}>PTR NO. {ptrNo || ''}</Text>
                     </View>
                 </View>
 
@@ -399,7 +433,7 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
     const removeMed = (idx: number) =>
         setMeds(prev => prev.length === 1 ? [emptyMed()] : prev.filter((_, i) => i !== idx))
 
-    const canPreview = meds.some(m => m.medication.trim())
+    const canPreview = Boolean(doctorName.trim()) && meds.some(m => m.medication.trim())
 
     const doc = <PrescriptionDocument patient={patient} date={today} medications={meds} doctorName={doctorName} licenseNo={licenseNo} ptrNo={ptrNo} />
 
@@ -440,20 +474,51 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
 
                         {/* Scrollable Body */}
                         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
-                            {/* Doctor Information */}
+                            {/* Doctor / Dentist Information */}
                             <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
-                                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                                    Doctor Information
-                                </span>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                                        Dentist Information
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setDoctorName('Roselle Larga Piedad DMD')
+                                                setLicenseNo('039277')
+                                                setPtrNo('32264627')
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition shadow-xs cursor-pointer"
+                                            title="Auto-fill with Dr. Roselle Larga Piedad's credentials"
+                                        >
+                                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                                            Auto-fill Dentist
+                                        </button>
+                                        {(doctorName || licenseNo || ptrNo) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setDoctorName('')
+                                                    setLicenseNo('')
+                                                    setPtrNo('')
+                                                }}
+                                                className="text-xs text-gray-400 hover:text-red-500 transition px-1"
+                                                title="Clear dentist fields"
+                                            >
+                                                Clear
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                                 <div>
                                     <label className={labelCls}>
-                                        Doctor Name <span className="text-red-500">*</span>
+                                        Dentist Name <span className="text-xs font-normal text-red-500">*</span>
                                     </label>
                                     <input
                                         type="text"
                                         value={doctorName}
                                         onChange={e => setDoctorName(e.target.value)}
-                                        placeholder="e.g. Juan Dela Cruz"
+                                        placeholder="e.g. Roselle Larga Piedad DMD"
                                         className={inputCls}
                                     />
                                 </div>
@@ -464,7 +529,7 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
                                             type="text"
                                             value={licenseNo}
                                             onChange={e => setLicenseNo(e.target.value)}
-                                            placeholder="e.g. 39277"
+                                            placeholder="e.g. 039277"
                                             className={inputCls}
                                         />
                                     </div>
@@ -474,7 +539,7 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
                                             type="text"
                                             value={ptrNo}
                                             onChange={e => setPtrNo(e.target.value)}
-                                            placeholder="e.g. 12345"
+                                            placeholder="e.g. 32264627"
                                             className={inputCls}
                                         />
                                     </div>
@@ -583,6 +648,13 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
                             <button
                                 onClick={() => setStep('preview')}
                                 disabled={!canPreview}
+                                title={
+                                    !doctorName.trim()
+                                        ? 'Please enter the dentist name'
+                                        : !meds.some(m => m.medication.trim())
+                                        ? 'Please enter at least one medication'
+                                        : undefined
+                                }
                                 className={`flex-1 py-2.5 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 ${canPreview
                                     ? 'bg-emerald-500 hover:bg-emerald-600'
                                     : 'bg-gray-300 cursor-not-allowed'
