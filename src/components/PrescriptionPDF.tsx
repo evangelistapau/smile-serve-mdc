@@ -21,11 +21,11 @@ Font.register({
     family: 'Poppins',
     fonts: [
         {
-            src: 'https://fonts.gstatic.com/s/poppins/v21/pxiEyp8kv8JHgFVrFJDUc1NECPY.woff2',
+            src: 'https://cdn.jsdelivr.net/npm/@fontsource/poppins@5.0.8/files/poppins-latin-400-normal.woff2',
             fontWeight: 400,
         },
         {
-            src: 'https://fonts.gstatic.com/s/poppins/v21/pxiByp8kv8JHgFVrLCz7V1tvFP-KUEg.woff2',
+            src: 'https://cdn.jsdelivr.net/npm/@fontsource/poppins@5.0.8/files/poppins-latin-700-normal.woff2',
             fontWeight: 700,
         },
     ],
