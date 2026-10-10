@@ -6,6 +6,8 @@ import {
     Page,
     Text,
     View,
+    Image,
+    Font,
     StyleSheet,
     PDFDownloadLink,
     PDFViewer,
@@ -13,6 +15,21 @@ import {
 } from '@react-pdf/renderer'
 import { Patient } from '@/types/patient'
 import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2 } from 'lucide-react'
+
+// ─── Font Registration ────────────────────────────────────────────────────────
+Font.register({
+    family: 'Poppins',
+    fonts: [
+        {
+            src: 'https://fonts.gstatic.com/s/poppins/v21/pxiEyp8kv8JHgFVrFJDUc1NECPY.woff2',
+            fontWeight: 400,
+        },
+        {
+            src: 'https://fonts.gstatic.com/s/poppins/v21/pxiByp8kv8JHgFVrLCz7V1tvFP-KUEg.woff2',
+            fontWeight: 700,
+        },
+    ],
+})
 
 
 const CLINIC_INFO = {
@@ -34,108 +51,123 @@ export interface MedicationEntry {
 }
 
 // ─── PDF Styles ───────────────────────────────────────────────────────────────
+const TEAL = '#007b8a'
+
 const pdfStyles = StyleSheet.create({
     page: {
         paddingTop: 28,
         paddingBottom: 28,
         paddingHorizontal: 36,
-        fontFamily: 'Times-Roman',
+        fontFamily: 'Poppins',
         backgroundColor: '#ffffff',
         flexDirection: 'column',
+        position: 'relative',
     },
+    // ── Watermark logo ──────────────────────────────────────────────────────────
+    watermark: {
+        position: 'absolute',
+        top: 120,
+        left: 30,
+        right: 30,
+        bottom: 60,
+        opacity: 0.5,
+        objectFit: 'contain',
+    },
+    // ── Header ──────────────────────────────────────────────────────────────────
     header: {
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 14,
     },
     clinicName: {
-        fontFamily: 'Times-Bold',
-        fontSize: 11,
-        letterSpacing: 1,
+        fontFamily: 'Poppins',
+        fontWeight: 700,
+        fontSize: 14,
+        letterSpacing: 1.5,
         textAlign: 'center',
+        color: TEAL,
     },
     clinicInfo: {
         fontSize: 9,
         textAlign: 'center',
         marginTop: 2,
-        color: '#222222',
+        color: TEAL,
+        fontFamily: 'Poppins',
+        fontWeight: 700,
     },
     divider: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#333333',
-        marginTop: 10,
-        marginBottom: 10,
+        borderBottomWidth: 1.2,
+        borderBottomColor: TEAL,
+        marginTop: 8,
+        marginBottom: 12,
     },
+    // ── Patient fields ───────────────────────────────────────────────────────────
     patientRow: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        marginBottom: 6,
+        marginBottom: 8,
     },
     fieldLabel: {
-        fontFamily: 'Times-Bold',
+        fontFamily: 'Poppins',
+        fontWeight: 700,
         fontSize: 9,
         marginRight: 4,
+        color: TEAL,
     },
     fieldUnderline: {
         borderBottomWidth: 1,
-        borderBottomColor: '#333333',
+        borderBottomColor: TEAL,
         flex: 1,
         marginRight: 10,
         paddingBottom: 1,
     },
     fieldValue: {
-        fontFamily: 'Times-Roman',
+        fontFamily: 'Poppins',
+        fontWeight: 400,
         fontSize: 9,
         color: '#111111',
     },
     fieldLabelSmall: {
-        fontFamily: 'Times-Bold',
+        fontFamily: 'Poppins',
+        fontWeight: 700,
         fontSize: 9,
         marginRight: 3,
+        color: TEAL,
     },
     fieldUnderlineShort: {
         borderBottomWidth: 1,
-        borderBottomColor: '#333333',
+        borderBottomColor: TEAL,
         width: 50,
         marginRight: 12,
         paddingBottom: 1,
     },
     fieldUnderlineDate: {
         borderBottomWidth: 1,
-        borderBottomColor: '#333333',
+        borderBottomColor: TEAL,
         width: 70,
         paddingBottom: 1,
     },
-    rxContainer: {
-        marginTop: 10,
-        marginBottom: 8,
-        flexDirection: 'row',
-        alignItems: 'flex-end',
+    // ── Rx image ─────────────────────────────────────────────────────────────────
+    rxImage: {
+        width: 60,
+        height: 60,
+        marginTop: 8,
+        marginBottom: 6,
     },
-    rxR: {
-        fontFamily: 'Times-Bold',
-        fontSize: 30,
-        color: '#1a1a1a',
-        lineHeight: 1,
-    },
-    rxX: {
-        fontFamily: 'Times-Bold',
-        fontSize: 16,
-        color: '#1a1a1a',
-        marginBottom: 3,
-    },
-    // Medication body
+    // ── Medication body ──────────────────────────────────────────────────────────
     medBlock: {
         marginBottom: 12,
         paddingLeft: 8,
     },
     medName: {
-        fontFamily: 'Times-Bold',
+        fontFamily: 'Poppins',
+        fontWeight: 700,
         fontSize: 10,
         color: '#111111',
         marginBottom: 2,
     },
     medDetail: {
-        fontFamily: 'Times-Roman',
+        fontFamily: 'Poppins',
+        fontWeight: 400,
         fontSize: 9,
         color: '#333333',
         marginBottom: 1,
@@ -146,17 +178,20 @@ const pdfStyles = StyleSheet.create({
     },
     writingLine: {
         borderBottomWidth: 0.5,
-        borderBottomColor: '#cccccc',
+        borderBottomColor: '#b2d8dc',
         marginBottom: 18,
     },
+    // ── Footer ───────────────────────────────────────────────────────────────────
     footer: {
         marginTop: 16,
         paddingTop: 8,
     },
     footerDoctorName: {
-        fontFamily: 'Times-Bold',
+        fontFamily: 'Poppins',
+        fontWeight: 700,
         fontSize: 9,
         textAlign: 'right',
+        color: TEAL,
     },
     footerLine: {
         flexDirection: 'row',
@@ -165,21 +200,21 @@ const pdfStyles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     footerLabel: {
-        fontFamily: 'Times-Roman',
+        fontFamily: 'Poppins',
+        fontWeight: 700,
         fontSize: 8,
-        color: '#222222',
-        marginRight: 4,
-    },
-    footerUnderline: {
-        borderBottomWidth: 0.7,
-        borderBottomColor: '#333333',
-        width: 60,
-        paddingBottom: 1,
+        color: TEAL,
+        marginRight: 2,
     },
     footerValue: {
-        fontFamily: 'Times-Roman',
+        fontFamily: 'Poppins',
+        fontWeight: 700,
         fontSize: 8,
-        color: '#333333',
+        color: TEAL,
+    },
+    footerUnderline: {
+        borderBottomWidth: 0,
+        width: 0,
     },
 })
 
@@ -204,6 +239,10 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
     const address = patient.address || ''
     const hasMeds = medications.length > 0 && medications.some(m => m.medication.trim())
 
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const logoSrc = `${origin}/mdc-logo.png`
+    const rxSrc = `${origin}/RX logo.png`
+
     return (
         <Document
             title={`Prescription - ${fullName}`}
@@ -212,21 +251,27 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
         >
             <Page size="A5" style={pdfStyles.page}>
 
+                {/* Background watermark logo */}
+                <Image
+                    src={logoSrc}
+                    style={pdfStyles.watermark}
+                />
+
+
                 {/* Clinic Header */}
                 <View style={pdfStyles.header}>
                     <Text style={pdfStyles.clinicName}>{CLINIC_INFO.name}</Text>
                     <Text style={pdfStyles.clinicInfo}>{CLINIC_INFO.address}</Text>
                     <Text style={pdfStyles.clinicInfo}>{CLINIC_INFO.schedule}</Text>
-                    <Text style={pdfStyles.clinicInfo}>{CLINIC_INFO.mode}</Text>
-                    <Text style={pdfStyles.clinicInfo}>Tel.# {CLINIC_INFO.telephone}</Text>
-                    <Text style={pdfStyles.clinicInfo}>Mobile# {CLINIC_INFO.mobile}</Text>
+                    <Text style={pdfStyles.clinicInfo}>Tel.#{CLINIC_INFO.telephone}</Text>
+                    <Text style={pdfStyles.clinicInfo}>Mobile#{CLINIC_INFO.mobile}</Text>
                 </View>
 
                 <View style={pdfStyles.divider} />
 
                 {/* Patient Name + Date */}
                 <View style={pdfStyles.patientRow}>
-                    <Text style={pdfStyles.fieldLabel}>Patient:</Text>
+                    <Text style={pdfStyles.fieldLabel}>Patient&apos;s Name:</Text>
                     <View style={[pdfStyles.fieldUnderline, { flex: 1 }]}>
                         <Text style={pdfStyles.fieldValue}>{fullName}</Text>
                     </View>
@@ -236,31 +281,28 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
                     </View>
                 </View>
 
-                {/* Age + Sex */}
+                {/* Address + Age */}
                 <View style={pdfStyles.patientRow}>
+                    <Text style={pdfStyles.fieldLabel}>Address:</Text>
+                    <View style={[pdfStyles.fieldUnderline, { flex: 1 }]}>
+                        <Text style={pdfStyles.fieldValue}>{address}</Text>
+                    </View>
                     <Text style={pdfStyles.fieldLabelSmall}>Age:</Text>
                     <View style={pdfStyles.fieldUnderlineShort}>
                         <Text style={pdfStyles.fieldValue}>{age}</Text>
                     </View>
-                    <Text style={pdfStyles.fieldLabelSmall}>Sex:</Text>
-                    <View style={[pdfStyles.fieldUnderlineShort, { width: 70 }]}>
+                </View>
+
+                {/* Sex */}
+                <View style={[pdfStyles.patientRow, { marginBottom: 2 }]}>
+                    <Text style={pdfStyles.fieldLabel}>Sex:</Text>
+                    <View style={[pdfStyles.fieldUnderlineShort, { width: 60 }]}>
                         <Text style={pdfStyles.fieldValue}>{sex}</Text>
                     </View>
                 </View>
 
-                {/* Address */}
-                <View style={[pdfStyles.patientRow, { marginBottom: 2 }]}>
-                    <Text style={pdfStyles.fieldLabel}>Address:</Text>
-                    <View style={[pdfStyles.fieldUnderline, { flex: 1, marginRight: 0 }]}>
-                        <Text style={pdfStyles.fieldValue}>{address}</Text>
-                    </View>
-                </View>
-
-                {/* Rx Symbol */}
-                <View style={pdfStyles.rxContainer}>
-                    <Text style={pdfStyles.rxR}>R</Text>
-                    <Text style={pdfStyles.rxX}>x</Text>
-                </View>
+                {/* Rx Image */}
+                <Image src={rxSrc} style={pdfStyles.rxImage} />
 
                 {/* Medication Entries or blank lines */}
                 {hasMeds ? (
@@ -283,20 +325,14 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
                     </View>
                 )}
 
-                {/* Footer */}
+                {/* Footer — doctor info bottom-right */}
                 <View style={pdfStyles.footer}>
                     <Text style={pdfStyles.footerDoctorName}>{doctorName.toUpperCase()}</Text>
                     <View style={pdfStyles.footerLine}>
-                        <Text style={pdfStyles.footerLabel}>LICENSE NO.</Text>
-                        <View style={pdfStyles.footerUnderline}>
-                            <Text style={pdfStyles.footerValue}>{licenseNo}</Text>
-                        </View>
+                        <Text style={pdfStyles.footerLabel}>LICENSE NO. {licenseNo}</Text>
                     </View>
                     <View style={pdfStyles.footerLine}>
-                        <Text style={pdfStyles.footerLabel}>PTR NO.</Text>
-                        <View style={[pdfStyles.footerUnderline, { width: 72 }]}>
-                            <Text style={pdfStyles.footerValue}>{ptrNo}</Text>
-                        </View>
+                        <Text style={pdfStyles.footerLabel}>PTR NO. {ptrNo}</Text>
                     </View>
                 </View>
 
