@@ -17,15 +17,17 @@ import { Patient } from '@/types/patient'
 import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2 } from 'lucide-react'
 
 // ─── Font Registration ────────────────────────────────────────────────────────
+// react-pdf ONLY supports TTF/OTF — woff2 causes a DataView RangeError in
+// the PDF font subsetter. Using official Google Fonts TTF from their GitHub.
 Font.register({
     family: 'Poppins',
     fonts: [
         {
-            src: 'https://cdn.jsdelivr.net/npm/@fontsource/poppins@5.0.8/files/poppins-latin-400-normal.woff2',
+            src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf',
             fontWeight: 400,
         },
         {
-            src: 'https://cdn.jsdelivr.net/npm/@fontsource/poppins@5.0.8/files/poppins-latin-700-normal.woff2',
+            src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf',
             fontWeight: 700,
         },
     ],
