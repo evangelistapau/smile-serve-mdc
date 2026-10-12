@@ -14,7 +14,7 @@ import {
     BlobProvider,
 } from '@react-pdf/renderer'
 import { Patient } from '@/types/patient'
-import { FileText, X, Printer, Download, ChevronRight, Plus, Trash2, Sparkles } from 'lucide-react'
+import { FileText, X, Printer, Download, ChevronRight, ChevronDown, Plus, Trash2, Sparkles } from 'lucide-react'
 
 // ─── Font Registration ────────────────────────────────────────────────────────
 // react-pdf ONLY supports TTF/OTF — woff2 causes a DataView RangeError in
@@ -42,6 +42,12 @@ const CLINIC_INFO = {
     telephone: '042-7541389',
     mobile: '+639173240955',
 }
+
+const DENTISTS = [
+    { name: 'Roselle Larga Piedad DMD', licenseNo: '039277', ptrNo: '32264627' },
+    { name: 'Lorevel V. Macalood DMD', licenseNo: '0065807', ptrNo: '' },
+    { name: 'Rowell B. Nepomuceno DMD', licenseNo: '0050200', ptrNo: '' },
+]
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface MedicationEntry {
@@ -367,9 +373,11 @@ export function PrescriptionDocument({ patient, date, medications, doctorName, l
                     <View style={pdfStyles.footerLine}>
                         <Text style={pdfStyles.footerLabel}>LICENSE NO. {licenseNo || ''}</Text>
                     </View>
-                    <View style={pdfStyles.footerLine}>
-                        <Text style={pdfStyles.footerLabel}>PTR NO. {ptrNo || ''}</Text>
-                    </View>
+                    {ptrNo?.trim() ? (
+                        <View style={pdfStyles.footerLine}>
+                            <Text style={pdfStyles.footerLabel}>PTR NO. {ptrNo.trim()}</Text>
+                        </View>
+                    ) : null}
                 </View>
 
             </Page>
@@ -395,6 +403,7 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
     const [doctorName, setDoctorName] = useState('')
     const [licenseNo, setLicenseNo] = useState('')
     const [ptrNo, setPtrNo] = useState('')
+    const [showDentistMenu, setShowDentistMenu] = useState(false)
 
     const today = new Date().toLocaleDateString('en-US', {
         month: '2-digit',
@@ -481,19 +490,43 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
                                         Dentist Information
                                     </span>
                                     <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setDoctorName('Roselle Larga Piedad DMD')
-                                                setLicenseNo('039277')
-                                                setPtrNo('32264627')
-                                            }}
-                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition shadow-xs cursor-pointer"
-                                            title="Auto-fill with Dr. Roselle Larga Piedad's credentials"
-                                        >
-                                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                                            Auto-fill Dentist
-                                        </button>
+                                        <div className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowDentistMenu(prev => !prev)}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition shadow-xs cursor-pointer"
+                                                title="Auto-fill with a dentist's credentials"
+                                            >
+                                                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                                                Auto-fill Dentist
+                                                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDentistMenu ? 'rotate-180' : ''}`} />
+                                            </button>
+
+                                            {showDentistMenu && (
+                                                <>
+                                                    {/* click-outside backdrop */}
+                                                    <div className="fixed inset-0 z-10" onClick={() => setShowDentistMenu(false)} />
+                                                    <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+                                                        {DENTISTS.map(d => (
+                                                            <button
+                                                                key={d.licenseNo}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setDoctorName(d.name)
+                                                                    setLicenseNo(d.licenseNo)
+                                                                    setPtrNo(d.ptrNo)
+                                                                    setShowDentistMenu(false)
+                                                                }}
+                                                                className="w-full text-left px-3 py-2 hover:bg-emerald-50 transition"
+                                                            >
+                                                                <div className="text-xs font-semibold text-gray-800">{d.name}</div>
+                                                                <div className="text-[11px] text-gray-500">License No. {d.licenseNo}</div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                         {(doctorName || licenseNo || ptrNo) && (
                                             <button
                                                 type="button"
@@ -652,8 +685,8 @@ export default function PrescriptionButton({ patient }: PrescriptionButtonProps)
                                     !doctorName.trim()
                                         ? 'Please enter the dentist name'
                                         : !meds.some(m => m.medication.trim())
-                                        ? 'Please enter at least one medication'
-                                        : undefined
+                                            ? 'Please enter at least one medication'
+                                            : undefined
                                 }
                                 className={`flex-1 py-2.5 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2 ${canPreview
                                     ? 'bg-emerald-500 hover:bg-emerald-600'
