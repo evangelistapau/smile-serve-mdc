@@ -19,6 +19,7 @@ import DeletePatientModal from '@/components/DeletePatientModal'
 
 // Dynamically import to avoid SSR issues with @react-pdf/renderer
 const PrescriptionButton = dynamic(() => import('@/components/PrescriptionPDF'), { ssr: false })
+const DentalCertificateButton = dynamic(() => import('@/components/DentalCertificatePDF'), { ssr: false })
 
 export default function PatientDetailsPage() {
     const router = useRouter()
@@ -546,6 +547,7 @@ export default function PatientDetailsPage() {
                                 <span className="sm:hidden">Delete</span>
                             </button>
                             <PrescriptionButton patient={patient} />
+                            <DentalCertificateButton patient={patient} />
                         </>
                     ) : (
                         <>
@@ -566,6 +568,7 @@ export default function PatientDetailsPage() {
                                 <span className="sm:hidden">Delete</span>
                             </button>
                             <PrescriptionButton patient={patient} />
+                            <DentalCertificateButton patient={patient} />
                         </>
                     )}
                 </div>
